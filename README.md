@@ -1,134 +1,55 @@
-# Her
+# Her V1 Complete Upgrade
 
-Her is an AI-powered writing companion designed to help authors organize, write, and develop stories from the first idea to the final manuscript.
+This package upgrades the current Her workspace with:
 
-Unlike traditional writing software, Her combines book management, world building, character development, AI assistance, and writing tools into one seamless workspace.
+1. AI memory built from the book, chapter summaries, characters, locations, world data, plot points, ideas and recent writing.
+2. Five-result brainstorming with save, regenerate and combine.
+3. Live suggestive writing after a completed sentence, plus manual Flow Starter.
+4. Per-chapter Plot Point tracking.
+5. AI continuity checking with saved and resolvable issues.
+6. Autosave, cursor/session restore and local-device storage.
+7. TXT export, full JSON backup and JSON restore.
+8. Mobile/APK-friendly layout, touch targets, sticky toolbar and safe viewport behavior.
+9. Google Play readiness checklist below.
 
----
+## Replace these files
 
-## Features
+- `frontend/pages/workspace/workspace.html`
+- `frontend/css/pages/workspace.css`
+- `frontend/js/modules/ai/ai.js`
+- `backend/routes/aiRoutes.js`
 
-### 📚 Book Management
+Adjust the paths if your folders use different names.
 
-* Create and organize unlimited books
-* Chapter management
-* Automatic project saving
-* Continue writing where you left off
+## Backend requirement
 
-### ✍️ Writing Workspace
+Your server must contain:
 
-* Distraction-free editor
-* Auto-save
-* Word count
-* Rewrite selected text
-* Continue Writing
-* Grammar suggestions
-* AI brainstorming
-
-### 🤖 AI Assistant
-
-* Continue writing in your voice
-* Rewrite passages
-* Change writing tone
-* Generate dialogue
-* Improve descriptions
-* Brainstorm plot ideas
-* Suggest plot twists
-* Maintain story consistency
-
-### 🌍 World Building
-
-Create and organize:
-
-* Characters
-* Locations
-* Organizations
-* Artifacts
-* Magic Systems
-* Timeline Events
-* Notes
-
-### 💾 Storage
-
-* Local device storage
-* Save writing sessions
-* Automatic recovery
-* Future cloud synchronization across devices
-
-### 📱 Mobile First
-
-Her is being built primarily as an Android application using Capacitor while also supporting a web version for development and testing.
-
----
-
-## Technology
-
-### Frontend
-
-* HTML5
-* CSS3
-* JavaScript
-
-### Backend
-
-* Node.js
-* Express
-* REST API
-
-### Database
-
-* Local Storage
-* Future Cloud Storage
-
-### AI
-
-* OpenAI API
-
----
-
-## Folder Structure
-
-```text
-Her/
-│
-├── android/
-├── assets/
-├── backend/
-├── components/
-├── css/
-├── js/
-├── pages/
-├── index.html
-├── README.md
-├── LICENSE
-└── .gitignore
+```js
+app.use("/api/ai", require("./routes/aiRoutes"));
 ```
 
----
+Your `.env` must contain:
 
-## Planned Features
+```env
+OPENAI_API_KEY=your_key_here
+OPENAI_MODEL=gpt-4o-mini
+```
 
-* Cloud synchronization
-* Cross-device save sessions
-* AI story memory
-* AI character memory
-* Export to DOCX, PDF, EPUB, and TXT
-* Writing statistics
-* Dark mode enhancements
-* Voice dictation
-* Offline AI support
-* Collaboration tools
+Do not put the API key in frontend JavaScript.
 
----
+## Important storage note
 
-## Status
+The workspace uses localStorage for the device-first V1. Full JSON backup lets a writer move data to another device manually. Cloud sync can be added later without replacing this system.
 
-Her is currently in active development.
+## Google Play publication checklist
 
-Many core systems—including the writing workspace, AI integration, world-building tools, and project management—are already functional, with additional features being added continuously.
-
----
-
-## License
-
-This project is licensed under the MIT License.
+- Set the production API URL in `ai.js` or define `window.HER_API_URL`.
+- Run the web build and `npx cap sync android`.
+- Create a signed Android App Bundle (`.aab`) in Android Studio.
+- Use a permanent package ID, version code and version name.
+- Add app icon, feature graphic and screenshots.
+- Host Privacy Policy and Terms pages.
+- Complete Play Console Data Safety disclosures.
+- Test backup/restore, offline saves, keyboard behavior and AI error states.
+- Upload the signed AAB to Internal Testing before Production.

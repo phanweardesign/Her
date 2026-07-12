@@ -1,0 +1,123 @@
+.workspace {
+    min-height: 100vh;
+    background: #16111f;
+    color: #f5f0ff;
+    display: flex;
+    flex-direction: column;
+}
+
+.workspace-header {
+    height: 72px;
+    padding: 0 16px;
+    background: #21182d;
+    border-bottom: 1px solid #352646;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.workspace-title {
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.workspace-chapter,
+.chapter-bar {
+    padding: 12px 16px;
+    background: #1b1426;
+    color: #b9a8d6;
+    border-bottom: 1px solid #352646;
+    font-size: 14px;
+}
+
+.save-status {
+    font-size: 14px;
+    color: #b9a8d6;
+}
+
+.editor-area {
+    flex: 1;
+    padding: 16px;
+}
+
+.story-editor {
+    width: 100%;
+    min-height: 58vh;
+    background: transparent;
+    color: #f5f0ff;
+    border: none;
+    outline: none;
+    resize: none;
+    font-size: 18px;
+    line-height: 1.7;
+}
+
+.story-editor::placeholder {
+    color: #7f6d9c;
+}
+
+.ai-toolbar {
+    padding: 12px;
+    background: #21182d;
+    border-top: 1px solid #352646;
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+}
+
+.ai-toolbar button {
+    min-height: 44px;
+    padding: 0 14px;
+    border: none;
+    border-radius: 999px;
+    background: #8b4dff;
+    color: white;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.workspace-footer {
+    padding: 10px 16px;
+    background: #16111f;
+    color: #b9a8d6;
+    display: flex;
+    justify-content: space-between;
+    font-size: 14px;
+}
+
+.project-drawer {
+    position: fixed;
+    top: 0;
+    left: -280px;
+    width: 260px;
+    height: 100vh;
+    background: #21182d;
+    border-right: 1px solid #352646;
+    z-index: 50;
+    transition: left 0.25s ease;
+    padding: 18px;
+}
+
+.project-drawer.open {
+    left: 0;
+}
+
+.drawer-title {
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+
+.drawer-subtitle {
+    color: #b9a8d6;
+    font-size: 14px;
+    margin-bottom: 24px;
+}
+
+.drawer-link {
+    display: block;
+    padding: 14px 0;
+    color: #f5f0ff;
+    border-bottom: 1px solid #352646;
+    font-weight: 600;
+}
