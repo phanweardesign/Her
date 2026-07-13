@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Character Profile | Her</title>
-    <link rel="stylesheet" href="../css/main.css">
+    <link rel="stylesheet" href="/css/main.css">
 </head>
 <body class="page-character">
 
@@ -12,17 +12,17 @@
     <div class="logo">📚 Her</div>
 
     <nav class="navbar">
-        <a class="nav-link" href="dashboard.html">Dashboard</a>
-        <a class="nav-link" href="books.html">Books</a>
-        <a class="nav-link active" href="characters.html">Characters</a>
-        <a class="nav-link" href="world.html">World Bible</a>
+        <a class="nav-link" href="/pages/dashboard.html">Dashboard</a>
+        <a class="nav-link" href="/pages/books/books.html">Books</a>
+        <a class="nav-link active" href="/pages/characters/characters.html">Characters</a>
+        <a class="nav-link" href="/pages/world/world.html">World Bible</a>
     </nav>
 </header>
 
 <main class="container section">
 
     <div class="form-actions" style="justify-content:space-between;">
-        <a class="btn btn-secondary" href="characters.html">Back</a>
+        <a class="btn btn-secondary" href="/pages/characters/characters.html">Back</a>
         <button class="btn" onclick="saveCharacter()">Save Character</button>
     </div>
 
@@ -123,15 +123,15 @@
 
 </main>
 
-<script src="../js/config.js"></script>
-<script src="../js/utils/constants.js"></script>
-<script src="../js/utils/helpers.js"></script>
-<script src="../js/storage.js"></script>
+<script src="/js/config.js"></script>
+<script src="/js/utils/constants.js"></script>
+<script src="/js/utils/helpers.js"></script>
+<script src="/js/storage.js"></script>
 
-<script src="../js/modules/books/books.js"></script>
-<script src="../js/modules/characters/characters.js"></script>
-<script src="../js/modules/ui/notifications.js"></script>
-<script src="../js/app.js"></script>
+<script src="/js/modules/books/books.js"></script>
+<script src="/js/modules/characters/characters.js"></script>
+<script src="/js/modules/ui/notifications.js"></script>
+<script src="/js/app.js"></script>
 
 <script>
 const book = HerBooks.getCurrent();

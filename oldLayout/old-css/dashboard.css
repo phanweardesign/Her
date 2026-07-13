@@ -1,0 +1,148 @@
+/* ==========================
+   DASHBOARD LAYOUT
+========================== */
+
+.dashboard {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    padding: 20px;
+}
+
+.dashboard-header {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.dashboard-title {
+    margin: 0;
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--text);
+}
+
+.dashboard-subtitle {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.95rem;
+}
+
+/* ==========================
+   GRID
+========================== */
+
+.dashboard-grid {
+    display: grid;
+    gap: 20px;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+
+/* ==========================
+   CARDS
+========================== */
+
+.dashboard-card {
+    background: var(--card);
+    border-radius: var(--radius);
+    padding: 20px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+    transition:
+        transform var(--transition),
+        box-shadow var(--transition);
+}
+
+.dashboard-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 16px 40px rgba(0,0,0,.12);
+}
+
+.dashboard-card h2,
+.dashboard-card h3 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    color: var(--text);
+}
+
+.dashboard-card p {
+    margin: 0;
+    color: var(--muted);
+    line-height: 1.5;
+}
+
+/* ==========================
+   QUICK ACTIONS
+========================== */
+
+.quick-actions {
+    display: grid;
+    gap: 16px;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+}
+
+.quick-action {
+    background: var(--primary-light);
+    border-radius: var(--radius);
+    padding: 18px;
+    text-align: center;
+    transition:
+        background var(--transition),
+        transform var(--transition);
+    cursor: pointer;
+}
+
+.quick-action:hover {
+    background: var(--primary);
+    color: white;
+    transform: translateY(-3px);
+}
+
+.quick-action h4 {
+    margin: 10px 0 0;
+    font-size: 1rem;
+}
+
+/* ==========================
+   RECENT ITEMS
+========================== */
+
+.recent-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.recent-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: #fff;
+}
+
+.recent-item:hover {
+    background: var(--primary-light);
+}
+
+/* ==========================
+   MOBILE
+========================== */
+
+@media (max-width: 768px) {
+
+    .dashboard {
+        padding: 16px;
+    }
+
+    .dashboard-title {
+        font-size: 1.6rem;
+    }
+
+    .quick-actions {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+}

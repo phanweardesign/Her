@@ -1,0 +1,16 @@
+/* Theme compatibility bridge */
+:root {
+    color-scheme: light;
+}
+
+html[data-theme="dark"] {
+    color-scheme: dark;
+}
+
+html[data-theme="light"] {
+    color-scheme: light;
+}
+
+.hidden {
+    display: none !important;
+}

@@ -46,13 +46,13 @@ const HerBooks = {
 
     getCurrent() {
         const books = this.getAll();
-        const currentId = localStorage.getItem(HerConfig.storageKeys.currentBook);
+        const currentId = getCurrentBookId();
 
         return books.find(book => book.id === currentId) || null;
     },
 
     setCurrent(bookId) {
-        localStorage.setItem(HerConfig.storageKeys.currentBook, bookId);
+        setCurrentBookId(bookId);
     },
 
     update(bookId, updates) {

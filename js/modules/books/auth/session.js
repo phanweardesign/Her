@@ -2,16 +2,22 @@ const HerSession = {
     key: "her_current_user",
 
     getCurrentUser() {
-        return JSON.parse(localStorage.getItem(this.key)) || null;
+        try {
+            return JSON.parse(localStorage.getItem(this.key)) || null;
+        } catch {
+            return null;
+        }
     },
 
     setCurrentUser(user) {
         localStorage.setItem(this.key, JSON.stringify(user));
+        localStorage.setItem("her_user", JSON.stringify(user));
     },
 
     logout() {
         localStorage.removeItem(this.key);
-        redirectTo("login.html");
+        localStorage.removeItem("her_user");
+        window.location.href = "/pages/auth/login.html";
     },
 
     isLoggedIn() {
@@ -20,7 +26,10 @@ const HerSession = {
 
     requireLogin() {
         if (!this.isLoggedIn()) {
-            redirectTo("login.html");
+            window.location.href = "/pages/auth/login.html";
+            return false;
         }
+
+        return true;
     }
 };

@@ -1,11 +1,13 @@
-/* HER MAIN CSS */
+/* HER MAIN CSS - single entry point */
 
-@import url("./variables.css");
-@import url("./reset.css");
-@import url("./layout.css");
-@import url("./auth.css");
-@import url("./components.css");
-@import url("./forms.css");
-@import url("./dashboard.css");
-@import url("./utilities.css");
-@import url("./workspace.css");
+@import url("/css/variables.css");
+@import url("/css/auth.css");
+@import url("/css/components.css");
+@import url("/css/dashboard.css");
+@import url("/css/forms.css");
+@import url("/css/layout.css");
+@import url("/css/pages/workspace.css");
+@import url("/css/reset.css");
+@import url("/css/utilities.css");
+@import url("/css/workspace.css");
+@import url("/css/themes/bridge.css");

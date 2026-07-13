@@ -1,34 +1,24 @@
-const HerLogin = {
-    usersKey: "her_users",
-
-    getUsers() {
-        return JSON.parse(localStorage.getItem(this.usersKey)) || [];
-    },
-
-    login(identifier, password) {
-        const users = this.getUsers();
-
-        const user = users.find(user =>
-            (
-                user.username.toLowerCase() === identifier.toLowerCase() ||
-                user.email.toLowerCase() === identifier.toLowerCase()
-            ) &&
-            user.password === password
-        );
-
-        if (!user) {
+/*
+   Legacy page wrapper.
+   All real login work is handled by HerAuthService.
+*/
+window.HerLogin = window.HerLogin || {
+    async login(identifier, password) {
+        try {
+            return await HerAuthService.login(identifier, password);
+        } catch (error) {
             return {
                 success: false,
-                message: "Invalid username, email, or password."
+                message: error.message || "Login failed."
             };
         }
+    },
 
-        HerSession.setCurrentUser(user);
+    logout() {
+        HerAuthService.logout();
+    },
 
-        return {
-            success: true,
-            message: "Login successful.",
-            user
-        };
+    currentUser() {
+        return HerAuthService.currentUser();
     }
 };

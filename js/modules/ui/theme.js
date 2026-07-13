@@ -1,12 +1,28 @@
 const HerTheme = {
-    key: HerConfig.storageKeys.theme,
+    get key() {
+        return typeof HerConfig !== "undefined"
+            ? HerConfig.storageKeys.theme
+            : "her_theme";
+    },
 
     get() {
-        return localStorage.getItem(this.key) || HerConfig.defaultTheme;
+        const saved = localStorage.getItem(this.key);
+
+        if (saved) {
+            try {
+                return JSON.parse(saved);
+            } catch {
+                return saved;
+            }
+        }
+
+        return typeof HerConfig !== "undefined"
+            ? HerConfig.defaultTheme
+            : "dark";
     },
 
     set(theme) {
-        localStorage.setItem(this.key, theme);
+        localStorage.setItem(this.key, JSON.stringify(theme));
         document.documentElement.setAttribute("data-theme", theme);
     },
 
@@ -21,6 +37,8 @@ const HerTheme = {
     }
 };
 
-document.addEventListener("DOMContentLoaded", () => {
+if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", () => HerTheme.applySaved());
+} else {
     HerTheme.applySaved();
-});
+}
