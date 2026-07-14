@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Terms of Service | Her</title>
+<link rel="stylesheet" href="../../css/main.css">
+
+<style>
+:root{
+    --bg:#120d1f;
+    --panel:#1d1630;
+    --card:#261d3c;
+    --purple:#8b5cf6;
+    --purple-soft:#c9b6ff;
+    --text:#ffffff;
+    --muted:#b9aecb;
+    --border:rgba(255,255,255,.09);
+    --shadow:0 18px 45px rgba(0,0,0,.28);
+}
+*{box-sizing:border-box}
+body{
+    min-height:100vh;
+    margin:0;
+    background:
+        radial-gradient(circle at top right,rgba(139,92,246,.18),transparent 35%),
+        var(--bg);
+    color:var(--text);
+    font-family:Arial,Helvetica,sans-serif;
+}
+.app-header{
+    position:sticky;
+    top:0;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:20px;
+    padding:18px 28px;
+    background:rgba(18,13,31,.94);
+    border-bottom:1px solid var(--border);
+    backdrop-filter:blur(14px);
+}
+.logo{font-size:22px;font-weight:800}
+.back-link{
+    padding:10px 14px;
+    border:1px solid var(--border);
+    border-radius:12px;
+    background:var(--card);
+    color:var(--text);
+    text-decoration:none;
+    font-weight:700;
+}
+.shell{
+    width:min(900px,calc(100% - 28px));
+    margin:0 auto;
+    padding:42px 0 56px;
+}
+.hero{
+    padding:36px 30px;
+    border:1px solid var(--border);
+    border-radius:22px;
+    background:linear-gradient(135deg,rgba(139,92,246,.23),rgba(38,29,60,.95));
+    box-shadow:var(--shadow);
+}
+.eyebrow{
+    margin:0 0 10px;
+    color:var(--purple-soft);
+    font-size:13px;
+    font-weight:800;
+    letter-spacing:.12em;
+    text-transform:uppercase;
+}
+.hero h1{margin:0;font-size:clamp(32px,6vw,52px)}
+.hero p{color:#d7cee6;line-height:1.6}
+.content{
+    margin-top:24px;
+    padding:28px;
+    border:1px solid var(--border);
+    border-radius:20px;
+    background:var(--panel);
+}
+.content h2{margin-top:30px;color:var(--purple-soft)}
+.content h2:first-child{margin-top:0}
+.content p,.content li{color:#d7cee6;line-height:1.7}
+.content ul{padding-left:22px}
+.footer{
+    margin-top:24px;
+    text-align:center;
+    color:var(--muted);
+    font-size:14px;
+}
+@media(max-width:600px){
+    .app-header{padding:14px 16px}
+    .hero,.content{padding:22px}
+}
+</style>
+
+</head>
+<body>
+<header class="app-header">
+    <div class="logo">📚 Her</div>
+    <a class="back-link" href="settings.html">← Settings</a>
+</header>
+
+<main class="shell">
+    <section class="hero">
+        <p class="eyebrow">Legal</p>
+        <h1>Terms of Service</h1>
+        <p>The conditions for using Her.</p>
+    </section>
+
+    <section class="content">
+        
+<h2>Acceptance</h2>
+<p>By using Her, you agree to these terms. If you do not agree, do not use the app.</p>
+
+<h2>Your Content</h2>
+<p>You retain ownership of the stories, characters, notes, and other original content you create in Her. You are responsible for keeping backups of important work.</p>
+
+<h2>AI-Generated Suggestions</h2>
+<p>AI output may be incomplete, inaccurate, repetitive, or unsuitable. Users are responsible for reviewing, editing, and deciding whether to use any suggestion.</p>
+
+<h2>Prohibited Use</h2>
+<p>Do not use Her to violate laws, infringe another person's rights, distribute malicious content, or misuse connected services.</p>
+
+<h2>No Guarantee</h2>
+<p>Her is provided as available. During testing, bugs, interruptions, data loss, or feature changes may occur.</p>
+
+<h2>Changes</h2>
+<p>Features and these terms may change as the app develops. Continued use after an update means you accept the revised terms.</p>
+
+<p><strong>Important:</strong> These starter terms should be reviewed before public release.</p>
+
+    </section>
+
+    <footer class="footer">
+        © 2026 Her. All rights reserved. · Version 1.0.0 RC1
+    </footer>
+</main>
+</body>
+</html>

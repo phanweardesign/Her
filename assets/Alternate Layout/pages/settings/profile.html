@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile | Her</title>
+    <link rel="stylesheet" href="/css/main.css">
+</head>
+<body class="page-profile">
+
+<header class="app-header">
+    <div class="logo">📚 Her</div>
+    <nav class="navbar">
+        <a class="nav-link" href="/pages/dashboard.html">Dashboard</a>
+        <a class="nav-link active" href="/pages/settings/profile.html">Profile</a>
+        <a class="nav-link" href="/pages/settings/settings.html">Settings</a>
+    </nav>
+</header>
+
+<main class="container section">
+    <h1>👤 Profile</h1>
+    <p class="card-text">Manage your local account information.</p>
+
+    <section class="form-section" style="margin-top:25px;">
+        <div class="form-row">
+            <div>
+                <label class="label">Username</label>
+                <input class="input" id="username">
+            </div>
+
+            <div>
+                <label class="label">Email</label>
+                <input class="input" id="email" type="email">
+            </div>
+        </div>
+
+        <div>
+            <label class="label">Display Name</label>
+            <input class="input" id="displayName">
+        </div>
+
+        <div>
+            <label class="label">Bio</label>
+            <textarea class="textarea" id="bio"></textarea>
+        </div>
+    </section>
+
+    <div class="form-actions">
+        <button class="btn btn-danger" onclick="logout()">Logout</button>
+        <button class="btn" onclick="saveProfile()">Save Profile</button>
+    </div>
+</main>
+
+<script src="/js/config.js"></script>
+<script src="/js/utils/constants.js"></script>
+<script src="/js/utils/helpers.js"></script>
+<script src="/js/utils/validation.js"></script>
+<script src="/js/storage.js"></script>
+
+<script src="/js/modules/books/auth/session.js"></script>
+<script src="/js/modules/books/auth/profile.js"></script>
+<script src="/js/modules/ui/notifications.js"></script>
+<script src="/js/app.js"></script>
+
+<script>
+let profile = HerProfile.getProfile();
+
+if (!profile) {
+    window.location.href = "login.html";
+}
+
+function loadProfile() {
+    document.getElementById("username").value = profile.username || "";
+    document.getElementById("email").value = profile.email || "";
+    document.getElementById("displayName").value = profile.displayName || "";
+    document.getElementById("bio").value = profile.bio || "";
+}
+
+function saveProfile() {
+    const email = getInputValue("#email");
+
+    if (!HerValidation.email(email)) {
+        HerNotifications.error("Please enter a valid email.");
+        return;
+    }
+
+    const result = HerProfile.updateProfile({
+        username: getInputValue("#username"),
+        email,
+        displayName: getInputValue("#displayName"),
+        bio: getInputValue("#bio")
+    });
+
+    if (result.success) {
+        profile = result.user;
+        HerNotifications.success("Profile saved");
+    } else {
+        HerNotifications.error(result.message);
+    }
+}
+
+function logout() {
+    HerSession.logout();
+}
+
+loadProfile();
+</script>
+
+</body>
+</html>

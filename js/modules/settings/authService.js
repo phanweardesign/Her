@@ -1,9 +1,17 @@
-/*
-   Compatibility file only.
-   HerAuthService is defined in /js/services/authService.js.
-*/
-if (!window.HerAuthService) {
-    console.warn(
-        "HerAuthService is not loaded. Add /js/services/authService.js first."
-    );
-}
+const HerAuthService = {
+    signup(username, email, password) {
+        return HerSignup.createAccount(username, email, password);
+    },
+
+    login(identifier, password) {
+        return HerLogin.login(identifier, password);
+    },
+
+    logout() {
+        HerSession.logout();
+    },
+
+    currentUser() {
+        return HerSession.getCurrentUser();
+    }
+};

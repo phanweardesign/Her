@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings | Her</title>
+    <link rel="stylesheet" href="/css/main.css">
+</head>
+<body class="page-settings">
+
+<header class="app-header">
+    <div class="logo">📚 Her</div>
+    <nav class="navbar">
+        <a class="nav-link" href="/pages/dashboard.html">Dashboard</a>
+        <a class="nav-link" href="/pages/settings/profile.html">Profile</a>
+        <a class="nav-link active" href="/pages/settings/settings.html">Settings</a>
+    </nav>
+</header>
+
+<main class="container section">
+    <h1>⚙️ Settings</h1>
+    <p class="card-text">Customize your writing experience.</p>
+
+    <section class="form-section" style="margin-top:25px;">
+        <h2>Appearance</h2>
+
+        <div class="setting">
+            <label class="label">Theme</label>
+            <select class="select" id="themeSelect">
+                <option value="light">Light</option>
+                <option value="dark">Dark</option>
+            </select>
+        </div>
+    </section>
+
+    <section class="form-section">
+        <h2>Editor</h2>
+
+        <div class="form-row">
+            <div>
+                <label class="label">Editor Font Size</label>
+                <input class="input" id="fontSize" type="number" min="12" max="32">
+            </div>
+
+            <div>
+                <label class="label">Daily Word Goal</label>
+                <input class="input" id="dailyGoal" type="number" min="1">
+            </div>
+        </div>
+
+        <div class="checkbox-group" style="margin-top:20px;">
+            <input class="checkbox" id="autosave" type="checkbox">
+            <label for="autosave">Enable autosave</label>
+        </div>
+    </section>
+
+    <div class="form-actions">
+        <button class="btn btn-secondary" onclick="resetSettings()">Reset</button>
+        <button class="btn" onclick="saveSettings()">Save Settings</button>
+    </div>
+</main>
+
+<script src="/js/config.js"></script>
+<script src="/js/utils/constants.js"></script>
+<script src="/js/utils/helpers.js"></script>
+<script src="/js/storage.js"></script>
+<script src="/js/modules/ui/theme.js"></script>
+<script src="/js/modules/ui/notifications.js"></script>
+<script src="/js/modules/settings/settings.js"></script>
+<script src="/js/modules/settings/preferences.js"></script>
+<script src="/js/app.js"></script>
+
+<script>
+function loadSettings() {
+    const settings = HerSettings.get();
+
+    document.getElementById("themeSelect").value = settings.theme;
+    document.getElementById("fontSize").value = settings.editorFontSize;
+    document.getElementById("dailyGoal").value = settings.dailyWordGoal;
+    document.getElementById("autosave").checked = settings.autosave;
+}
+
+function saveSettings() {
+    const theme = document.getElementById("themeSelect").value;
+
+    HerSettings.save({
+        theme,
+        editorFontSize: Number(document.getElementById("fontSize").value),
+        dailyWordGoal: Number(document.getElementById("dailyGoal").value),
+        autosave: document.getElementById("autosave").checked
+    });
+
+    HerTheme.set(theme);
+    HerNotifications.success("Settings saved");
+}
+
+function resetSettings() {
+    if (!confirm("Reset settings?")) return;
+
+    HerSettings.reset();
+    loadSettings();
+    HerTheme.set("light");
+    HerNotifications.success("Settings reset");
+}
+
+loadSettings();
+</script>
+
+</body>
+</html>
