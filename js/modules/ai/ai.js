@@ -1,16 +1,1 @@
-const HerAI = {
-    apiUrl: window.HER_API_URL || "/api/ai/ask",
-
-    async ask(action, prompt, context = {}, options = {}) {
-        const response = await fetch(this.apiUrl, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ action, prompt, context, options })
-        });
-
-        const data = await response.json().catch(() => ({}));
-        if (!response.ok) throw new Error(data.message || "AI request failed.");
-        if (typeof data.reply === "undefined") throw new Error("Her returned an empty response.");
-        return data.reply;
-    }
-};
+const HerAI={async ask(action,text="",context={},options={}){const r=await fetch("/api/ai/ask",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action,prompt:text,context,options})});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.message||`AI request failed (${r.status})`);return d.reply},continueWriting(t,c={}){return this.ask("continue",t,c)},rewrite(t,c={},style="standard"){return this.ask("rewrite",t,c,{style})},grammar(t,c={}){return this.ask("grammar",t,c)},brainstorm(t,c={}){return this.ask("brainstorm",t,c)},scanCharacters(t,c={}){return this.ask("story_intelligence_characters",t,c)}};

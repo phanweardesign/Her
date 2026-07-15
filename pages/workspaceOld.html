@@ -80,7 +80,6 @@ html,body{background:var(--her-bg);color:var(--her-text)}
     .ai-toolbar::-webkit-scrollbar{display:none}
     .ai-toolbar button{flex:0 0 auto}
 }
-.story-scan-card{display:grid;gap:10px;padding:16px;border:1px solid var(--her-border);border-radius:14px;background:var(--her-card)} .story-scan-card h3{margin:0} .story-scan-meta{color:var(--her-muted);font-size:14px} .story-scan-evidence{padding:10px;border-radius:10px;background:rgba(139,92,246,.1);color:var(--her-muted)}
 </style>
 
 </head>
@@ -132,7 +131,6 @@ html,body{background:var(--her-bg);color:var(--her-text)}
         <button onclick="runAI('section_starter')">Flow Starter</button>
         <button onclick="runAI('continuity_check')">Continuity</button>
         <button onclick="openLibrary('plotPoints')">Plot Points</button>
-        <button onclick="scanStoryCharacters()">Scan Characters</button>
     </div>
 
     <footer class="workspace-footer">
@@ -200,14 +198,7 @@ html,body{background:var(--her-bg);color:var(--her-text)}
     </div>
 </div>
 
-<script src="../js/config.js"></script>
-<script src="../js/utils/helpers.js"></script>
-<script src="../js/storage.js"></script>
-<script src="../js/modules/books/books.js"></script>
-<script src="../js/modules/books/chapters.js"></script>
-<script src="../js/modules/characters/characters.js"></script>
 <script src="../js/modules/ai/ai.js"></script>
-<script src="../js/modules/ai/storyIntelligence.js"></script>
 <script>
 
 function openDashboard() {
@@ -296,11 +287,6 @@ function saveNow() {
     chapter().manuscript = editor.value;
     book().updatedAt = new Date().toISOString();
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    if (typeof HerChapters !== "undefined" && CURRENT_BOOK_ID && CURRENT_CHAPTER_ID) {
-        HerChapters.update(CURRENT_BOOK_ID, CURRENT_CHAPTER_ID, {
-            content: editor.value, manuscript: editor.value, brainstorms: chapter().brainstorms, ideas: chapter().ideas, plotPoints: chapter().plotPoints, sectionStarters: chapter().sectionStarters, continuityIssues: chapter().continuityIssues, summary: chapter().summary, summaryUpdatedAt: chapter().summaryUpdatedAt, rewriteHistory: chapter().rewriteHistory
-        });
-    }
     localStorage.setItem(SESSION_KEY, JSON.stringify({
         bookId: CURRENT_BOOK_ID,
         chapterId: CURRENT_CHAPTER_ID,
@@ -769,12 +755,6 @@ function useLiveSuggestion() {
     insertText($("suggestionChip").textContent);
     $("suggestionChip").classList.add("hidden");
 }
-
-
-let detectedCharacterSuggestions=[];
-async function scanStoryCharacters(){const manuscript=editor.value.trim();if(!manuscript){alert("Write part of the chapter before scanning.");return;} saveNow(); $("resultTitle").textContent="Story Intelligence"; $("resultStatus").textContent="Scanning for new characters..."; $("resultBody").innerHTML='<div class="loading"><i></i><i></i><i></i></div>'; $("resultFooter").innerHTML='<button class="secondary" onclick="closePanels()">Cancel</button>'; openPanel($("resultPanel")); try{const currentBook=HerBooks.getCurrent();const currentChapter=HerChapters.find(CURRENT_BOOK_ID,CURRENT_CHAPTER_ID);const result=await HerStoryIntelligence.scanCharacters({book:currentBook,chapter:currentChapter,manuscript});detectedCharacterSuggestions=result.characters.filter(s=>!HerCharacters.findByName(CURRENT_BOOK_ID,s.name));renderCharacterSuggestions();}catch(e){errorResult(e)}}
-function renderCharacterSuggestions(){if(!detectedCharacterSuggestions.length){$("resultTitle").textContent="New Characters";$("resultStatus").textContent="No new named characters found";$("resultBody").innerHTML='<div class="empty">Her did not find any new named characters missing from this book.</div>';$("resultFooter").innerHTML='<button onclick="closePanels()">Done</button>';return;} $("resultTitle").textContent="New Characters";$("resultStatus").textContent=`${detectedCharacterSuggestions.length} suggestion${detectedCharacterSuggestions.length===1?'':'s'}`;$("resultBody").innerHTML='<div class="card-list">'+detectedCharacterSuggestions.map((s,i)=>`<article class="story-scan-card"><h3>${esc(s.name)}</h3><div class="story-scan-meta">${esc(s.role||'Supporting Character')}${s.age?' • Age '+esc(s.age):''}${s.occupation?' • '+esc(s.occupation):''}</div>${s.relationships.length?`<p>${esc(s.relationships.join(' • '))}</p>`:''}${s.evidence?`<p class="story-scan-evidence">${esc(s.evidence)}</p>`:''}<div class="small-actions"><button onclick="acceptDetectedCharacter(${i})">Add Draft Profile</button><button class="secondary" onclick="ignoreDetectedCharacter(${i})">Ignore</button></div></article>`).join('')+'</div>';$("resultFooter").innerHTML='<button onclick="acceptAllDetectedCharacters()">Accept All</button><button class="secondary" onclick="closePanels()">Review Later</button>';}
-function acceptDetectedCharacter(i){const s=detectedCharacterSuggestions[i];if(!s)return;HerStoryIntelligence.acceptCharacter(CURRENT_BOOK_ID,CURRENT_CHAPTER_ID,s);detectedCharacterSuggestions.splice(i,1);renderCharacterSuggestions()} function ignoreDetectedCharacter(i){detectedCharacterSuggestions.splice(i,1);renderCharacterSuggestions()} function acceptAllDetectedCharacters(){detectedCharacterSuggestions.forEach(s=>HerStoryIntelligence.acceptCharacter(CURRENT_BOOK_ID,CURRENT_CHAPTER_ID,s));detectedCharacterSuggestions=[];renderCharacterSuggestions()}
 
 function openTools() { closeDrawer(); $("toolsModal").classList.add("open"); }
 function closeTools() { $("toolsModal").classList.remove("open"); }

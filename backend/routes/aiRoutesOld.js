@@ -16,8 +16,7 @@ Return valid JSON only in this shape:
 {"issues":[{"severity":"high|medium|review","text":"clear explanation"}]}
 Return {"issues":[]} when no issue is found.`,
     chapter_summary: `Create a compact memory summary for this chapter. Include: major events, character actions and decisions, new facts, locations, objects, promises, mysteries, relationship changes, timeline facts, and unresolved questions. Return plain text.`,
-    book_summary: `Create or update a compact whole-book memory summary using all supplied chapter summaries, plot points, characters, locations and timeline. Preserve confirmed facts and unresolved threads. Return plain text.`,
-    story_intelligence_characters: `Analyze the chapter for NEW named fictional people only. Compare against existingCharacters in STORY MEMORY. Extract only facts directly supported by the chapter and never invent details. Return valid JSON only: {"characters":[{"name":"string","role":"string","age":"string","occupation":"string","relationships":["string"],"firstAppearance":"string","confidence":0.0,"evidence":"short explanation"}]}. Return {"characters":[]} if none.`
+    book_summary: `Create or update a compact whole-book memory summary using all supplied chapter summaries, plot points, characters, locations and timeline. Preserve confirmed facts and unresolved threads. Return plain text.`
 };
 
 function rewriteInstruction(style) {
@@ -65,10 +64,10 @@ ${prompt}`
                 }
             ],
             temperature:
-                action === "grammar" || action === "continuity_check" || action === "story_intelligence_characters" ? 0.15 :
+                action === "grammar" || action === "continuity_check" ? 0.2 :
                 action === "chapter_summary" || action === "book_summary" ? 0.35 :
                 action === "section_starter" ? 0.65 : 0.8,
-            response_format: ["continuity_check", "story_intelligence_characters"].includes(action)
+            response_format: action === "continuity_check"
                 ? { type: "json_object" }
                 : undefined
         });
