@@ -285,6 +285,36 @@ button{cursor:pointer}
     .field-group.full{grid-column:auto}
     .form-actions{flex-direction:column}
 }
+
+.chapter-card{position:relative}
+.chapter-menu-button{
+    position:absolute;top:14px;right:14px;z-index:3;
+    width:46px;height:46px;padding:0;border:1px solid var(--border);
+    border-radius:14px;background:rgba(18,13,31,.88);
+    color:var(--text);font-size:25px;line-height:1;
+}
+.chapter-menu{
+    position:absolute;top:66px;right:14px;z-index:8;
+    display:none;min-width:180px;padding:8px;
+    border:1px solid var(--border);border-radius:14px;
+    background:#171124;box-shadow:0 18px 40px rgba(0,0,0,.42);
+}
+.chapter-menu.open{display:grid;gap:5px}
+.chapter-menu button{
+    min-height:46px;padding:0 13px;border:0;border-radius:10px;
+    background:transparent;color:var(--text);text-align:left;font-weight:700;
+}
+.chapter-menu button:hover,.chapter-menu button:focus{background:rgba(139,92,246,.18)}
+.chapter-menu .delete-option{color:#ff9caf}
+@media(max-width:560px){
+    .chapter-menu{
+        position:fixed;left:12px;right:12px;top:auto;
+        bottom:calc(12px + env(safe-area-inset-bottom));
+        min-width:0;padding:12px;border-radius:18px;
+    }
+    .chapter-menu button{min-height:52px;font-size:16px}
+}
+
 </style>
 
 </head>
@@ -333,7 +363,7 @@ button{cursor:pointer}
 const book = HerBooks.getCurrent();
 if (!book) window.location.href = "books.html";
 
-document.getElementById("bookTitle").textContent = book.title;
+document.getElementById("bookTitle").textContent = book?.title || "Chapters";
 
 function esc(value) {
     return String(value || "")
@@ -342,6 +372,22 @@ function esc(value) {
         .replaceAll(">","&gt;")
         .replaceAll('"',"&quot;")
         .replaceAll("'","&#039;");
+}
+
+function closeChapterMenus() {
+    document.querySelectorAll(".chapter-menu.open")
+        .forEach(menu => menu.classList.remove("open"));
+}
+
+function toggleChapterMenu(event, chapterId) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const menu = document.getElementById(`chapterMenu-${chapterId}`);
+    const open = menu && !menu.classList.contains("open");
+
+    closeChapterMenus();
+    if (open) menu.classList.add("open");
 }
 
 function renderChapters(list = HerChapters.getAll(book.id)) {
@@ -361,38 +407,119 @@ function renderChapters(list = HerChapters.getAll(book.id)) {
     }
 
     grid.innerHTML = chapters.map(chapter => `
-        <article class="app-card" tabindex="0"
+        <article class="app-card chapter-card" tabindex="0"
             onclick="openChapter('${chapter.id}')"
-            onkeydown="if(event.key==='Enter'||event.key===' ') openChapter('${chapter.id}')">
+            onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openChapter('${chapter.id}')}">
+
+            <button class="chapter-menu-button" type="button"
+                aria-label="Chapter options"
+                onclick="toggleChapterMenu(event,'${chapter.id}')">⋮</button>
+
+            <div class="chapter-menu" id="chapterMenu-${chapter.id}"
+                onclick="event.stopPropagation()">
+                <button type="button" onclick="renameChapter('${chapter.id}')">✏️ Rename</button>
+                <button type="button" onclick="duplicateChapter('${chapter.id}')">📄 Duplicate</button>
+                <button class="delete-option" type="button"
+                    onclick="deleteChapter('${chapter.id}')">🗑 Delete</button>
+            </div>
+
             <div class="card-icon">📝</div>
             <h2 class="card-title">${esc(chapter.title || "Untitled Chapter")}</h2>
             <p class="card-role">${esc(chapter.status || "Draft")}</p>
             <p class="card-description">
-                ${HerWordCount.countWords(chapter.content || "")} words
+                ${HerWordCount.countWords(chapter.content || chapter.manuscript || "")} words
             </p>
         </article>
     `).join("");
 }
 
 function createChapter() {
-    const title = prompt("Chapter title:") || "New Chapter";
-    HerChapters.create(book.id, title);
+    const title = prompt("Chapter title:", "New Chapter");
+    if (title === null) return;
+
+    const chapter = HerChapters.create(book.id, title.trim() || "New Chapter");
+
+    if (!chapter) {
+        alert("The chapter could not be created.");
+        return;
+    }
+
     HerNotifications.success("Chapter created");
-    renderChapters();
+    openChapter(chapter.id);
 }
 
 function openChapter(chapterId) {
+    localStorage.setItem(HerConfig.storageKeys.currentBook, book.id);
     localStorage.setItem(HerConfig.storageKeys.currentChapter, chapterId);
     window.location.href = "workspace.html";
 }
 
+function renameChapter(chapterId) {
+    closeChapterMenus();
+
+    const chapter = HerChapters.find(book.id, chapterId);
+    if (!chapter) return;
+
+    const title = prompt("Rename chapter:", chapter.title || "");
+    if (title === null) return;
+
+    const renamed = HerChapters.rename(book.id, chapterId, title);
+
+    if (!renamed) {
+        alert("Enter a chapter title.");
+        return;
+    }
+
+    HerNotifications.success("Chapter renamed");
+    renderChapters();
+}
+
+function duplicateChapter(chapterId) {
+    closeChapterMenus();
+
+    const duplicate = HerChapters.duplicate(book.id, chapterId);
+
+    if (!duplicate) {
+        alert("The chapter could not be duplicated.");
+        return;
+    }
+
+    HerNotifications.success("Chapter duplicated");
+    renderChapters();
+}
+
+function deleteChapter(chapterId) {
+    closeChapterMenus();
+
+    const chapter = HerChapters.find(book.id, chapterId);
+    if (!chapter) return;
+
+    if (!confirm(`Delete "${chapter.title || "this chapter"}"?\n\nThis cannot be undone.`)) {
+        return;
+    }
+
+    const result = HerChapters.delete(book.id, chapterId);
+
+    if (!result.success) {
+        alert(result.message);
+        return;
+    }
+
+    HerNotifications.success("Chapter deleted");
+    renderChapters();
+}
+
 document.getElementById("chapterSearch").addEventListener("input", function() {
     const query = this.value.trim().toLowerCase();
-    const all = HerChapters.getAll(book.id);
-    renderChapters(all.filter(chapter =>
-        String(chapter.title || "").toLowerCase().includes(query)
-    ));
+    renderChapters(
+        HerChapters.getAll(book.id).filter(chapter =>
+            String(chapter.title || "").toLowerCase().includes(query)
+        )
+    );
 });
+
+document.addEventListener("click", closeChapterMenus);
+window.addEventListener("blur", closeChapterMenus);
 
 renderChapters();
 </script>

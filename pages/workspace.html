@@ -214,72 +214,71 @@ function openDashboard() {
     window.location.href = "dashboard.html";
 }
 
-const STORAGE_KEY = "her_workspace_v2";
-const SESSION_KEY = "her_last_session_v1";
-const CURRENT_BOOK_ID = localStorage.getItem("her_current_book_id") || "book-1";
-const CURRENT_CHAPTER_ID = localStorage.getItem("her_current_chapter_id") || "chapter-1";
+const SESSION_KEY =
+    HerConfig.storageKeys.lastSession || "her_last_session_v1";
 
-const $ = id => document.getElementById(id);
-const editor = $("storyEditor");
-let saveTimer = null;
-let suggestionTimer = null;
-let lastAIResponse = "";
-let lastAIAction = "";
-let originalText = "";
-let currentBrainstormBatch = [];
-let lastRewrite = { style: "standard", input: "" };
+const CURRENT_BOOK_ID =
+    localStorage.getItem(HerConfig.storageKeys.currentBook);
 
-function defaultChapter() {
+const CURRENT_CHAPTER_ID =
+    localStorage.getItem(HerConfig.storageKeys.currentChapter);
+
+let currentBook = HerBooks.getAll().find(
+    item => item.id === CURRENT_BOOK_ID
+) || null;
+
+let currentChapter = currentBook
+    ? HerChapters.find(currentBook.id, CURRENT_CHAPTER_ID)
+    : null;
+
+if (!currentBook) {
+    window.location.replace("books.html");
+}
+
+if (!currentChapter) {
+    window.location.replace("chapters.html");
+}
+
+function normalizeChapter(chapterData) {
     return {
-        id: CURRENT_CHAPTER_ID,
-        title: "Chapter 1",
-        manuscript: "",
-        brainstorms: [],
-        ideas: [],
-        plotPoints: [],
-        sectionStarters: [],
-        continuityIssues: [],
-        summary: "",
-        summaryUpdatedAt: null,
-        rewriteHistory: []
+        ...chapterData,
+        content: chapterData.content || chapterData.manuscript || "",
+        manuscript: chapterData.manuscript || chapterData.content || "",
+        brainstorms: Array.isArray(chapterData.brainstorms) ? chapterData.brainstorms : [],
+        ideas: Array.isArray(chapterData.ideas) ? chapterData.ideas : [],
+        plotPoints: Array.isArray(chapterData.plotPoints) ? chapterData.plotPoints : [],
+        sectionStarters: Array.isArray(chapterData.sectionStarters) ? chapterData.sectionStarters : [],
+        continuityIssues: Array.isArray(chapterData.continuityIssues) ? chapterData.continuityIssues : [],
+        summary: chapterData.summary || "",
+        summaryUpdatedAt: chapterData.summaryUpdatedAt || null,
+        rewriteHistory: Array.isArray(chapterData.rewriteHistory) ? chapterData.rewriteHistory : []
     };
 }
 
-function defaultBook() {
-    return {
-        id: CURRENT_BOOK_ID,
-        title: "Untitled Book",
-        genre: "",
-        characters: [],
-        locations: [],
-        organizations: [],
-        artifacts: [],
-        magic: [],
-        timeline: [],
-        notes: [],
-        bookSummary: "",
-        chapters: { [CURRENT_CHAPTER_ID]: defaultChapter() },
-        updatedAt: new Date().toISOString()
-    };
+currentChapter = normalizeChapter(currentChapter);
+
+function book() {
+    return currentBook;
 }
 
-function loadState() {
-    try {
-        const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
-        if (!stored.books) stored.books = {};
-        if (!stored.books[CURRENT_BOOK_ID]) stored.books[CURRENT_BOOK_ID] = defaultBook();
-        const book = stored.books[CURRENT_BOOK_ID];
-        if (!book.chapters) book.chapters = {};
-        if (!book.chapters[CURRENT_CHAPTER_ID]) book.chapters[CURRENT_CHAPTER_ID] = defaultChapter();
-        return stored;
-    } catch {
-        return { books: { [CURRENT_BOOK_ID]: defaultBook() } };
+function chapter() {
+    return currentChapter;
+}
+
+function reloadCurrentData() {
+    currentBook = HerBooks.getAll().find(
+        item => item.id === CURRENT_BOOK_ID
+    ) || currentBook;
+
+    const latestChapter = HerChapters.find(
+        CURRENT_BOOK_ID,
+        CURRENT_CHAPTER_ID
+    );
+
+    if (latestChapter) {
+        currentChapter = normalizeChapter(latestChapter);
     }
 }
-
-let state = loadState();
-const book = () => state.books[CURRENT_BOOK_ID];
-const chapter = () => book().chapters[CURRENT_CHAPTER_ID];
 
 function id(prefix) {
     return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -293,20 +292,40 @@ function esc(value) {
 }
 
 function saveNow() {
-    chapter().manuscript = editor.value;
-    book().updatedAt = new Date().toISOString();
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    if (typeof HerChapters !== "undefined" && CURRENT_BOOK_ID && CURRENT_CHAPTER_ID) {
-        HerChapters.update(CURRENT_BOOK_ID, CURRENT_CHAPTER_ID, {
-            content: editor.value, manuscript: editor.value, brainstorms: chapter().brainstorms, ideas: chapter().ideas, plotPoints: chapter().plotPoints, sectionStarters: chapter().sectionStarters, continuityIssues: chapter().continuityIssues, summary: chapter().summary, summaryUpdatedAt: chapter().summaryUpdatedAt, rewriteHistory: chapter().rewriteHistory
-        });
+    currentChapter.content = editor.value;
+    currentChapter.manuscript = editor.value;
+
+    const saved = HerChapters.update(
+        CURRENT_BOOK_ID,
+        CURRENT_CHAPTER_ID,
+        {
+            content: editor.value,
+            manuscript: editor.value,
+            brainstorms: currentChapter.brainstorms,
+            ideas: currentChapter.ideas,
+            plotPoints: currentChapter.plotPoints,
+            sectionStarters: currentChapter.sectionStarters,
+            continuityIssues: currentChapter.continuityIssues,
+            summary: currentChapter.summary,
+            summaryUpdatedAt: currentChapter.summaryUpdatedAt,
+            rewriteHistory: currentChapter.rewriteHistory
+        }
+    );
+
+    if (saved) {
+        currentChapter = normalizeChapter(saved);
     }
-    localStorage.setItem(SESSION_KEY, JSON.stringify({
-        bookId: CURRENT_BOOK_ID,
-        chapterId: CURRENT_CHAPTER_ID,
-        cursor: editor.selectionStart,
-        savedAt: new Date().toISOString()
-    }));
+
+    localStorage.setItem(
+        SESSION_KEY,
+        JSON.stringify({
+            bookId: CURRENT_BOOK_ID,
+            chapterId: CURRENT_CHAPTER_ID,
+            cursor: editor.selectionStart,
+            savedAt: new Date().toISOString()
+        })
+    );
+
     $("saveStatus").textContent = "Saved ✓";
     updateCounts();
 }
@@ -318,16 +337,31 @@ function scheduleSave() {
 }
 
 function initialize() {
-    editor.value = chapter().manuscript || "";
-    ["bookTitle", "drawerBookTitle"].forEach(x => $(x).textContent = book().title);
-    ["chapterTitle", "drawerChapterTitle"].forEach(x => $(x).textContent = chapter().title);
+    editor.value = currentChapter.content || currentChapter.manuscript || "";
+
+    ["bookTitle", "drawerBookTitle"].forEach(id => {
+        $(id).textContent = currentBook.title || "Untitled Book";
+    });
+
+    ["chapterTitle", "drawerChapterTitle"].forEach(id => {
+        $(id).textContent = currentChapter.title || "Untitled Chapter";
+    });
+
     updateStats();
     updateCounts();
 
-    const session = JSON.parse(localStorage.getItem(SESSION_KEY) || "null");
-    if (session?.bookId === CURRENT_BOOK_ID && session?.chapterId === CURRENT_CHAPTER_ID) {
-        const cursor = Math.min(session.cursor || 0, editor.value.length);
-        editor.setSelectionRange(cursor, cursor);
+    try {
+        const session = JSON.parse(localStorage.getItem(SESSION_KEY) || "null");
+
+        if (
+            session?.bookId === CURRENT_BOOK_ID &&
+            session?.chapterId === CURRENT_CHAPTER_ID
+        ) {
+            const cursor = Math.min(session.cursor || 0, editor.value.length);
+            editor.setSelectionRange(cursor, cursor);
+        }
+    } catch {
+        /* Ignore invalid old session data. */
     }
 }
 
@@ -382,7 +416,7 @@ function recentWriting() {
 }
 
 function buildMemory() {
-    const previousChapters = Object.values(book().chapters)
+    const previousChapters = (Array.isArray(book().chapters) ? book().chapters : [])
         .filter(c => c.id !== CURRENT_CHAPTER_ID)
         .map(c => ({ title: c.title, summary: c.summary, plotPoints: c.plotPoints }))
         .filter(c => c.summary || c.plotPoints?.length);
@@ -665,9 +699,15 @@ function saveChapterSummary(reply) {
 }
 
 function saveBookSummary(reply) {
-    book().bookSummary = String(reply || "").trim();
-    saveNow();
-    $("resultBody").textContent = book().bookSummary;
+    const summary = String(reply || "").trim();
+
+    HerBooks.update(CURRENT_BOOK_ID, {
+        bookSummary: summary
+    });
+
+    currentBook.bookSummary = summary;
+
+    $("resultBody").textContent = summary;
     $("resultStatus").textContent = "Book memory updated";
     $("resultFooter").innerHTML = `<button onclick="closePanels()">Done</button>`;
 }
@@ -788,7 +828,8 @@ function downloadFile(name, content, type) {
 }
 
 function exportBookText() {
-    const text = Object.values(book().chapters)
+    reloadCurrentData();
+    const text = (Array.isArray(book().chapters) ? book().chapters : [])
         .map(c => `${c.title}\n\n${c.manuscript || ""}`).join("\n\n\n");
     downloadFile(`${book().title || "Her-Book"}.txt`, text, "text/plain");
 }
@@ -796,7 +837,7 @@ function exportBookText() {
 function exportBackup() {
     saveNow();
     downloadFile(`Her-Backup-${new Date().toISOString().slice(0,10)}.json`,
-        JSON.stringify(state, null, 2), "application/json");
+        JSON.stringify({ books: HerBooks.getAll(), exportedAt: new Date().toISOString() }, null, 2), "application/json");
 }
 
 async function importBackup(event) {
@@ -804,9 +845,9 @@ async function importBackup(event) {
     if (!file) return;
     try {
         const imported = JSON.parse(await file.text());
-        if (!imported.books) throw new Error("Invalid backup");
-        state = imported;
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        const books = Array.isArray(imported) ? imported : imported.books;
+        if (!Array.isArray(books)) throw new Error("Invalid backup");
+        HerBooks.saveAll(books);
         location.reload();
     } catch {
         alert("That file is not a valid Her backup.");
