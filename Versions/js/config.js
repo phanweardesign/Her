@@ -1,2 +1,0 @@
-const HerConfig={appName:"Her",version:"1.0.0",defaultTheme:"dark",storageKeys:{books:"her_books",currentBook:"her_current_book_id",currentChapter:"her_current_chapter_id",currentCharacter:"her_current_character_id",user:"her_user",settings:"her_settings",notes:"her_notes",theme:"her_theme",lastSession:"her_last_session_v1",storySuggestions:"her_story_intelligence_suggestions"},features:{darkMode:true,aiAssistant:true,storyIntelligence:true,cloudSync:false,exportTools:true}};
-const CONFIG=HerConfig;
