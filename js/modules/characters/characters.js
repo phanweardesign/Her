@@ -18,10 +18,15 @@ const HerCharacters = {
             personality: data.personality || "",
             backstory: data.backstory || "",
             goals: data.goals || "",
-            relationships: [],
+            relationships: Array.isArray(data.relationships) ? data.relationships : [],
             notes: data.notes || "",
-            linkedChapters: [],
-            linkedLocations: [],
+            firstAppearance: data.firstAppearance || "",
+            confidence: Number.isFinite(Number(data.confidence)) ? Number(data.confidence) : null,
+            evidence: data.evidence || "",
+            status: data.status || "Active",
+            source: data.source || "manual",
+            linkedChapters: Array.isArray(data.linkedChapters) ? data.linkedChapters : [],
+            linkedLocations: Array.isArray(data.linkedLocations) ? data.linkedLocations : [],
             createdAt: formatDate(),
             updatedAt: formatDate()
         };

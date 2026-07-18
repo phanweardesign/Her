@@ -57,7 +57,7 @@
                 <input type="checkbox" id="termsCheck" required>
                 <span>
                     I agree to the
-                    <a href="../legal/terms.html" target="_blank">Terms of Service</a>
+                    <a href="../terms.html" target="_blank">Terms of Service</a>
                 </span>
             </label>
 
@@ -65,7 +65,7 @@
                 <input type="checkbox" id="privacyCheck" required>
                 <span>
                     I agree to the
-                    <a href="../legal/privacy.html" target="_blank">Privacy Policy</a>
+                    <a href="../privacy.html" target="_blank">Privacy Policy</a>
                 </span>
             </label>
 
@@ -170,7 +170,7 @@
                     })
                 });
 
-                const data = await response.json().catch(() => ({}));
+                const data = await response.json();
 
                 if (!response.ok) {
                     alert(data.message || "Signup failed.");

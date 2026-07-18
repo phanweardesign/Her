@@ -160,7 +160,7 @@ form.addEventListener("submit", async (e)=>{
 
         });
 
-        const data = await response.json().catch(() => ({}));
+        const data = await response.json();
 
         if(!response.ok){
 
@@ -172,8 +172,10 @@ form.addEventListener("submit", async (e)=>{
             return;
         }
 
-        localStorage.setItem("her_user", JSON.stringify(data.user));
-        localStorage.setItem("her_auth_token", data.token || "");
+        localStorage.setItem(
+            "herUser",
+            JSON.stringify(data.user)
+        );
 
         window.location.href="../dashboard.html";
 
