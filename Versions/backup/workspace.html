@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Her Workspace</title>
+    <link rel="stylesheet" href="../../css/main.css">
+</head>
+<body>
+    <div class="workspace">
+        <aside class="project-drawer" id="projectDrawer">
+            <div class="drawer-title">The Last Kingdom</div>
+            <div class="drawer-subtitle">Fantasy</div>
+
+            <a href="#" class="drawer-link">📖 Writing</a>
+            <a href="#" class="drawer-link">📑 Chapters</a>
+            <a href="#" class="drawer-link">👥 Characters</a>
+            <a href="#" class="drawer-link">🌍 Locations</a>
+            <a href="#" class="drawer-link">📝 Notes</a>
+            <a href="#" class="drawer-link">📜 Timeline</a>
+            <a href="#" class="drawer-link">⚙ Settings</a>
+        </aside>
+
+        <header class="workspace-header">
+            <div class="workspace-title">The Last Kingdom</div>
+            <div class="save-status" id="saveStatus">Saved ✓</div>
+        </header>
+
+        <div class="chapter-bar">Chapter 1</div>
+
+        <main class="editor-area">
+            <textarea class="story-editor" id="storyEditor" placeholder="Start writing..."></textarea>
+        </main>
+
+        <div class="ai-toolbar">
+            <button onclick="runAI('continue')">Continue</button>
+            <button onclick="runAI('rewrite')">Rewrite</button>
+            <button onclick="runAI('grammar')">Grammar</button>
+            <button onclick="runAI('brainstorm')">Brainstorm</button>
+            <button onclick="toggleDrawer()">Menu</button>
+        </div>
+
+        <footer class="workspace-footer">
+            <span id="wordCount">0 words</span>
+            <span id="readTime">1 min read</span>
+        </footer>
+    </div>
+
+    <script src="../../js/config.js"></script>
+    <script src="../../js/storage.js"></script>
+    <script src="../../js/modules/ai/ai.js"></script>
+
+    <script>
+        const editor = document.getElementById("storyEditor");
+        const wordCount = document.getElementById("wordCount");
+        const readTime = document.getElementById("readTime");
+        const drawer = document.getElementById("projectDrawer");
+        const saveStatus = document.getElementById("saveStatus");
+
+        function toggleDrawer() {
+            drawer.classList.toggle("open");
+        }
+
+        function updateStats() {
+            const text = editor.value.trim();
+            const words = text ? text.split(/\s+/).length : 0;
+            const minutes = Math.max(1, Math.ceil(words / 200));
+
+            wordCount.textContent = `${words} words`;
+            readTime.textContent = `${minutes} min read`;
+        }
+
+        async function runAI(action) {
+
+    const text = editor.value.trim();
+
+    if (!text) {
+        alert("Write something first.");
+        return;
+    }
+
+    saveStatus.textContent = "Thinking...";
+
+    try {
+
+        let reply = "";
+
+        switch (action) {
+
+            case "continue":
+                reply = await HerAI.continue(text);
+                editor.value += "\n\n" + reply;
+                break;
+
+            case "rewrite":
+                reply = await HerAI.rewrite(text);
+                editor.value = reply;
+                break;
+
+            case "grammar":
+                reply = await HerAI.grammar(text);
+                editor.value = reply;
+                break;
+
+            case "brainstorm":
+                reply = await HerAI.brainstorm(text);
+                alert(reply);
+                break;
+
+            default:
+                return;
+        }
+
+        updateStats();
+        saveStatus.textContent = "Saved ✓";
+
+    } catch (error) {
+
+        console.error(error);
+        saveStatus.textContent = "AI Failed";
+        alert("AI request failed.");
+
+    }
+}
+    </script>
+</body>
+</html>

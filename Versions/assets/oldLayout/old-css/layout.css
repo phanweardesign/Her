@@ -1,0 +1,65 @@
+body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+}
+
+.app-shell {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.app-header {
+    height: var(--header-height);
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 18px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.app-title {
+    font-size: 1.2rem;
+    font-weight: 700;
+}
+
+.app-main {
+    flex: 1;
+    padding: 20px;
+    padding-bottom: 90px;
+    width: 100%;
+    max-width: var(--max-width);
+    margin: 0 auto;
+}
+
+.bottom-nav {
+    height: 72px;
+    background: var(--card);
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 20;
+}
+
+.bottom-nav a {
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 0.8rem;
+    font-weight: 600;
+    transition: var(--transition);
+}
+
+.bottom-nav a.active,
+.bottom-nav a:hover {
+    color: var(--primary);
+}

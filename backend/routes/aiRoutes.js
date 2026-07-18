@@ -2,7 +2,9 @@ const express = require("express");
 const OpenAI = require("openai");
 
 const router = express.Router();
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const openai = process.env.OPENAI_API_KEY
+    ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+    : null;
 
 const ACTIONS = {
     continue: "Continue naturally in the author's established voice, POV, tense, pacing and direction. Return only the continuation.",
@@ -32,6 +34,10 @@ function rewriteInstruction(style) {
 
 router.post("/ask", async (req, res) => {
     try {
+        if (!openai) {
+            return res.status(503).json({ message: "OPENAI_API_KEY is not configured on the server." });
+        }
+
         const { action, prompt, context = {}, options = {} } = req.body;
         if (!String(prompt || "").trim()) {
             return res.status(400).json({ message: "Prompt is required." });
@@ -79,7 +85,11 @@ ${prompt}`
         res.json({ action, reply });
     } catch (error) {
         console.error("Her AI error:", error);
-        res.status(500).json({ message: error?.message || "AI request failed." });
+        const status = error?.status && Number.isInteger(error.status) ? error.status : 500;
+        const safeStatus = [400, 401, 403, 429].includes(status) ? status : 500;
+        res.status(safeStatus).json({
+            message: safeStatus === 500 ? "AI request failed on the server." : (error?.message || "AI request failed.")
+        });
     }
 });
 

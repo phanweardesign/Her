@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify Email | Her</title>
+    <link rel="stylesheet" href="/css/main.css">
+</head>
+<body class="auth-page">
+
+<main class="auth-card">
+    <div class="text-center">
+        <h1>Verify Your Email</h1>
+        <p class="card-text">
+            We sent a verification link to your email. Click it to activate your Her account.
+        </p>
+    </div>
+
+    <div class="alert alert-info">
+        Check your inbox and spam folder.
+    </div>
+
+    <div class="form-actions" style="flex-direction:column;">
+        <button class="btn" onclick="resendEmail()">Resend Email</button>
+        <a class="btn btn-secondary" href="/pages/auth/login.html">Back to Login</a>
+    </div>
+</main>
+
+<script src="/js/config.js"></script>
+<script src="/js/modules/ui/notifications.js"></script>
+<script src="/js/app.js"></script>
+
+<script>
+function resendEmail(){
+    HerNotifications.success("Verification resend is ready for backend connection.");
+}
+</script>
+
+</body>
+</html>

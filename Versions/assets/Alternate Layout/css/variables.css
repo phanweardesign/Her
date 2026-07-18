@@ -1,0 +1,24 @@
+:root {
+    --bg: #f7f3f8;
+    --card: #ffffff;
+    --text: #241b2f;
+    --muted: #6d5d78;
+    --primary: #8b4dff;
+    --primary-dark: #6f35d8;
+    --danger: #d93025;
+    --success: #188038;
+    --border: #ddd3e8;
+
+    --radius: 16px;
+    --shadow: 0 10px 30px rgba(0,0,0,0.08);
+    --font: Arial, Helvetica, sans-serif;
+	
+	--header-height: 70px;
+    --sidebar-width: 260px;
+
+    --primary-light: #efe6ff;
+
+    --transition: 0.25s ease;
+
+    --max-width: 1400px;
+}

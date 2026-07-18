@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Magic System | Her</title>
+    <link rel="stylesheet" href="../css/main.css">
+</head>
+<body class="page-world">
+
+<header class="app-header">
+    <div class="logo">📚 Her</div>
+    <nav class="navbar">
+        <a class="nav-link" href="world.html">World Bible</a>
+        <a class="nav-link" href="artifacts.html">Artifacts</a>
+        <a class="nav-link active" href="magic.html">Magic</a>
+        <a class="nav-link" href="timeline.html">Timeline</a>
+    </nav>
+</header>
+
+<main class="container section">
+    <div class="header-left" style="justify-content:space-between;">
+        <div>
+            <h1>✨ Magic System</h1>
+            <p class="card-text">Define rules, costs, powers, limits, and forbidden magic.</p>
+        </div>
+        <button class="btn" onclick="createMagic()">+ Magic System</button>
+    </div>
+
+    <section class="encyclopedia-grid" id="magicGrid" style="margin-top:25px;"></section>
+</main>
+
+<script src="../js/config.js"></script>
+<script src="../js/utils/constants.js"></script>
+<script src="../js/utils/helpers.js"></script>
+<script src="../js/storage.js"></script>
+<script src="../js/modules/books/books.js"></script>
+<script src="../js/modules/world/magic.js"></script>
+<script src="../js/modules/ui/notifications.js"></script>
+<script src="../js/app.js"></script>
+
+<script>
+const book = HerBooks.getCurrent();
+if (!book) window.location.href = "books.html";
+
+function renderMagic() {
+    const magicSystems = HerMagic.getAll(book.id);
+    const grid = document.getElementById("magicGrid");
+
+    if (magicSystems.length === 0) {
+        grid.innerHTML = `<div class="card"><h2 class="card-title">No magic systems yet</h2><p class="card-text">Create one to define your world's rules.</p></div>`;
+        return;
+    }
+
+    grid.innerHTML = magicSystems.map(magic => `
+        <div class="magic-card">
+            <div class="magic-title">${magic.name}</div>
+            <div class="magic-rule"><strong>Source:</strong> ${magic.source || "Unknown"}</div>
+            <div class="magic-rule"><strong>Rules:</strong> ${magic.rules || "No rules yet."}</div>
+            <div class="magic-rule"><strong>Limitations:</strong> ${magic.limitations || "No limitations yet."}</div>
+        </div>
+    `).join("");
+}
+
+function createMagic() {
+    const name = prompt("Magic system name:");
+    if (!name) return;
+
+    const source = prompt("Source of magic:") || "";
+
+    HerMagic.create(book.id, { name, source });
+    HerNotifications.success("Magic system created");
+    renderMagic();
+}
+
+renderMagic();
+</script>
+
+</body>
+</html>
