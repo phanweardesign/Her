@@ -1,0 +1,26 @@
+HER MAIN MASTER — VERIFIED FIXES
+
+Source used:
+- Her_master_v10(1).zip supplied by the user.
+
+Repairs:
+- Rebuilt book storage recovery and normalization.
+- Books saved in her_books now list after creation and reload.
+- Older keys (books, herBooks, HerBooks, her_book_library, bookLibrary) are migrated.
+- Array, object-shaped, nested, single-book, and double-encoded saves are recovered.
+- Missing book and chapter IDs are generated without discarding records.
+- Books page refreshes on initial load, back navigation, and tab visibility return.
+- Book title is editable in the workspace and persists.
+- Chapter title is editable in the workspace and persists.
+- Fixed workspace title element lookup that incorrectly used CSS selector syntax.
+- Drawer book/chapter titles update with editor title changes.
+
+Automated verification passed:
+- JavaScript syntax for all project and backend JS files.
+- Inline JavaScript syntax for every HTML page.
+- Create book -> save -> list.
+- Browser-storage reload -> list.
+- Legacy object-shaped book recovery.
+- Double-encoded book recovery.
+- Book rename persistence.
+- Chapter rename persistence and book record synchronization.

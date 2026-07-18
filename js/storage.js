@@ -69,62 +69,183 @@ function clearStorage() {
 
 /* BOOKS */
 
-function normalizeBooks(value) {
-    if (Array.isArray(value)) {
-        return value;
+const HER_LEGACY_BOOK_KEYS = [
+    "books",
+    "herBooks",
+    "HerBooks",
+    "her_book_library",
+    "bookLibrary"
+];
+
+function createStorageId(prefix = "item") {
+    if (typeof createId === "function") {
+        return createId();
     }
 
-    /*
-        Recover an object-shaped collection if an older version saved books
-        by their IDs instead of as an array.
-    */
-    if (value && typeof value === "object") {
-        if (Array.isArray(value.books)) {
-            return value.books;
+    return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
+function decodeStoredValue(value) {
+    let decoded = value;
+
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+        if (typeof decoded !== "string") {
+            break;
         }
 
-        return Object.values(value).filter(
-            item => item && typeof item === "object" && item.id
-        );
+        const trimmed = decoded.trim();
+        if (!trimmed) return null;
+
+        try {
+            decoded = JSON.parse(trimmed);
+        } catch {
+            break;
+        }
     }
 
-    return [];
+    return decoded;
+}
+
+function extractBookCollection(value) {
+    const decoded = decodeStoredValue(value);
+
+    if (Array.isArray(decoded)) {
+        return decoded;
+    }
+
+    if (!decoded || typeof decoded !== "object") {
+        return [];
+    }
+
+    const nestedCandidates = [
+        decoded.books,
+        decoded.library,
+        decoded.items,
+        decoded.data
+    ];
+
+    for (const candidate of nestedCandidates) {
+        const extracted = extractBookCollection(candidate);
+        if (extracted.length) return extracted;
+    }
+
+    /* A single saved book object. */
+    if (
+        decoded.title ||
+        decoded.bookTitle ||
+        decoded.name ||
+        Array.isArray(decoded.chapters)
+    ) {
+        return [decoded];
+    }
+
+    /* Older builds sometimes saved books as an object keyed by index or ID. */
+    return Object.values(decoded).filter(item =>
+        item &&
+        typeof item === "object" &&
+        (
+            item.title ||
+            item.bookTitle ||
+            item.name ||
+            Array.isArray(item.chapters)
+        )
+    );
+}
+
+function normalizeChapterRecord(chapter, index) {
+    const source = chapter && typeof chapter === "object" ? chapter : {};
+    const content = source.content ?? source.manuscript ?? source.text ?? "";
+
+    return {
+        ...source,
+        id: String(source.id || source.chapterId || createStorageId("chapter")),
+        title: String(
+            source.title ||
+            source.chapterTitle ||
+            source.name ||
+            `Chapter ${index + 1}`
+        ),
+        content: String(content),
+        manuscript: String(source.manuscript ?? content),
+        status: source.status || "Draft",
+        createdAt: source.createdAt || formatDate(),
+        updatedAt: source.updatedAt || formatDate()
+    };
+}
+
+function normalizeBookRecord(book, index) {
+    const source = book && typeof book === "object" ? book : {};
+    let chapters = Array.isArray(source.chapters)
+        ? source.chapters
+        : extractBookCollection(source.chapterList || source.sections || []);
+
+    chapters = chapters.map(normalizeChapterRecord);
+
+    if (!chapters.length) {
+        chapters = [normalizeChapterRecord({}, 0)];
+    }
+
+    return {
+        ...source,
+        id: String(source.id || source.bookId || createStorageId("book")),
+        title: String(
+            source.title ||
+            source.bookTitle ||
+            source.name ||
+            `Untitled Book ${index + 1}`
+        ),
+        genre: String(source.genre || ""),
+        description: String(source.description || source.summary || ""),
+        chapters,
+        createdAt: source.createdAt || formatDate(),
+        updatedAt: source.updatedAt || formatDate()
+    };
+}
+
+function normalizeBooks(value) {
+    return extractBookCollection(value).map(normalizeBookRecord);
 }
 
 function getBooks() {
-    const books = normalizeBooks(
-        load(HER_STORAGE_KEYS.BOOKS, [])
-    );
+    const allCandidates = [];
+    const canonicalRaw = localStorage.getItem(HER_STORAGE_KEYS.BOOKS);
 
-    /*
-        Rewrite recovered legacy data into the current array format.
-        This does not delete or alter the individual books.
-    */
-    const raw = localStorage.getItem(HER_STORAGE_KEYS.BOOKS);
-
-    if (books.length && raw) {
-        try {
-            const firstParse = JSON.parse(raw);
-
-            if (
-                !Array.isArray(firstParse) ||
-                typeof firstParse === "string"
-            ) {
-                saveBooks(books);
-            }
-        } catch {
-            /* Leave the original value untouched if it cannot be verified. */
-        }
+    if (canonicalRaw !== null) {
+        allCandidates.push(...normalizeBooks(canonicalRaw));
     }
 
-    return books;
+    /* Recover books created by older builds that used another key. */
+    HER_LEGACY_BOOK_KEYS.forEach(key => {
+        const raw = localStorage.getItem(key);
+        if (raw !== null) {
+            allCandidates.push(...normalizeBooks(raw));
+        }
+    });
+
+    const unique = [];
+    const seen = new Set();
+
+    allCandidates.forEach(book => {
+        const signature = book.id || `${book.title}::${book.createdAt}`;
+        if (seen.has(signature)) return;
+        seen.add(signature);
+        unique.push(book);
+    });
+
+    /* Always rewrite the recovered collection into the one canonical key. */
+    if (unique.length || canonicalRaw !== null) {
+        saveBooks(unique);
+    }
+
+    return unique;
 }
 
 function saveBooks(books) {
-    save(
-        HER_STORAGE_KEYS.BOOKS,
-        Array.isArray(books) ? books : []
-    );
+    const normalized = Array.isArray(books)
+        ? books.map(normalizeBookRecord)
+        : [];
+
+    save(HER_STORAGE_KEYS.BOOKS, normalized);
 }
 
 /* CURRENT BOOK — ID based */
