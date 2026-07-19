@@ -70,6 +70,12 @@ html,body{background:var(--her-bg);color:var(--her-text)}
     color:var(--her-text);
     border-color:var(--her-border);
 }
+
+.workspace-title{min-width:0;display:flex;flex-direction:column;gap:1px;flex:1}
+.workspace-title-input{display:block;width:min(100%,520px);margin:0;padding:0;border:0;outline:0;background:transparent;color:var(--her-text);font:inherit;line-height:1.2;text-overflow:ellipsis}
+.book-title-input{font-weight:700;font-size:16px}
+.chapter-title-input{font-size:13px;color:var(--her-muted)}
+.workspace-title-input:focus{border-bottom:1px solid var(--her-purple);background:rgba(139,92,246,.08)}
 @media(max-width:600px){
     .workspace-header{padding-top:max(10px,env(safe-area-inset-top))}
     .ai-toolbar{
@@ -107,9 +113,11 @@ html,body{background:var(--her-bg);color:var(--her-text)}
 
     <header class="workspace-header">
         <button class="icon-button" onclick="toggleDrawer()" aria-label="Open menu">☰</button>
-        <div class="workspace-title">
-            <strong id="bookTitle">Untitled Book</strong>
-            <span id="chapterTitle">Chapter 1</span>
+        <div class="workspace-title" aria-label="Current book and chapter">
+            <input id="bookTitle" class="workspace-title-input book-title-input" type="text"
+                value="Untitled Book" aria-label="Book title" title="Edit book title">
+            <input id="chapterTitle" class="workspace-title-input chapter-title-input" type="text"
+                value="Chapter 1" aria-label="Chapter title" title="Edit chapter title">
         </div>
         <span class="save-status" id="saveStatus">Saved ✓</span>
     </header>
@@ -351,6 +359,64 @@ function scheduleSave() {
     saveTimer = setTimeout(saveNow, 450);
 }
 
+function refreshWorkspaceTitles() {
+    reloadCurrentData();
+
+    const bookTitle = currentBook?.title || "Untitled Book";
+    const chapterTitle = currentChapter?.title || "Untitled Chapter";
+
+    byId("bookTitle").value = bookTitle;
+    byId("chapterTitle").value = chapterTitle;
+    byId("drawerBookTitle").textContent = bookTitle;
+    byId("drawerChapterTitle").textContent = chapterTitle;
+}
+
+function saveBookTitle() {
+    const input = byId("bookTitle");
+    const title = input.value.trim();
+
+    if (!title) {
+        input.value = currentBook.title || "Untitled Book";
+        return;
+    }
+
+    if (title !== currentBook.title) {
+        HerBooks.update(CURRENT_BOOK_ID, { title });
+        currentBook = HerBooks.getAll().find(item => item.id === CURRENT_BOOK_ID) || currentBook;
+    }
+
+    refreshWorkspaceTitles();
+    byId("saveStatus").textContent = "Saved ✓";
+}
+
+function saveChapterTitle() {
+    const input = byId("chapterTitle");
+    const title = input.value.trim();
+
+    if (!title) {
+        input.value = currentChapter.title || "Untitled Chapter";
+        return;
+    }
+
+    const renamed = HerChapters.rename(CURRENT_BOOK_ID, CURRENT_CHAPTER_ID, title);
+    if (renamed) currentChapter = normalizeChapter(renamed);
+
+    refreshWorkspaceTitles();
+    byId("saveStatus").textContent = "Saved ✓";
+}
+
+function handleTitleKeydown(event, saveFunction) {
+    if (event.key === "Enter") {
+        event.preventDefault();
+        saveFunction();
+        event.currentTarget.blur();
+    } else if (event.key === "Escape") {
+        event.preventDefault();
+        refreshWorkspaceTitles();
+        event.currentTarget.blur();
+    }
+}
+
 function initialize() {
     if (!editor) {
         throw new Error("Workspace editor element was not found.");
@@ -361,13 +427,7 @@ function initialize() {
 
     editor.value = currentChapter.content || currentChapter.manuscript || "";
 
-    ["bookTitle", "drawerBookTitle"].forEach(id => {
-        $(id).textContent = currentBook.title || "Untitled Book";
-    });
-
-    ["chapterTitle", "drawerChapterTitle"].forEach(id => {
-        $(id).textContent = currentChapter.title || "Untitled Chapter";
-    });
+    refreshWorkspaceTitles();
 
     updateStats();
     updateCounts();
@@ -877,7 +937,17 @@ async function importBackup(event) {
 }
 
 if (editor && currentBook && currentChapter) {
-    editor.addEventListener("input", () => {
+    byId("bookTitle").addEventListener("blur", saveBookTitle);
+byId("bookTitle").addEventListener("keydown", event => handleTitleKeydown(event, saveBookTitle));
+byId("chapterTitle").addEventListener("blur", saveChapterTitle);
+byId("chapterTitle").addEventListener("keydown", event => handleTitleKeydown(event, saveChapterTitle));
+
+window.addEventListener("pageshow", refreshWorkspaceTitles);
+window.addEventListener("storage", event => {
+    if (event.key === HerConfig.storageKeys.books) refreshWorkspaceTitles();
+});
+
+editor.addEventListener("input", () => {
         updateStats();
         scheduleSave();
         requestLiveSuggestion();
