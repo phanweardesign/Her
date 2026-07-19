@@ -81,5 +81,28 @@ const HerCharacters = {
 
     find(bookId, characterId) {
         return this.getAll(bookId).find(character => character.id === characterId) || null;
+    },
+
+    findByName(bookId, name) {
+        const normalizedName = String(name || "")
+            .trim()
+            .replace(/\s+/g, " ")
+            .toLocaleLowerCase();
+
+        if (!normalizedName) return null;
+
+        return this.getAll(bookId).find(character => {
+            const characterName = String(character?.name || "")
+                .trim()
+                .replace(/\s+/g, " ")
+                .toLocaleLowerCase();
+
+            const nickname = String(character?.nickname || "")
+                .trim()
+                .replace(/\s+/g, " ")
+                .toLocaleLowerCase();
+
+            return characterName === normalizedName || nickname === normalizedName;
+        }) || null;
     }
 };

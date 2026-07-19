@@ -108,8 +108,8 @@ html,body{background:var(--her-bg);color:var(--her-text)}
     <header class="workspace-header">
         <button class="icon-button" onclick="toggleDrawer()" aria-label="Open menu">☰</button>
         <div class="workspace-title">
-            <strong id="bookTitle" contenteditable="true" spellcheck="false" title="Click to rename book">Untitled Book</strong>
-            <span id="chapterTitle" contenteditable="true" spellcheck="false" title="Click to rename chapter">Chapter 1</span>
+            <strong id="bookTitle">Untitled Book</strong>
+            <span id="chapterTitle">Chapter 1</span>
         </div>
         <span class="save-status" id="saveStatus">Saved ✓</span>
     </header>
@@ -362,15 +362,12 @@ function initialize() {
     editor.value = currentChapter.content || currentChapter.manuscript || "";
 
     ["bookTitle", "drawerBookTitle"].forEach(id => {
-        byId(id).textContent = currentBook.title || "Untitled Book";
+        $(id).textContent = currentBook.title || "Untitled Book";
     });
 
     ["chapterTitle", "drawerChapterTitle"].forEach(id => {
-        byId(id).textContent = currentChapter.title || "Untitled Chapter";
+        $(id).textContent = currentChapter.title || "Untitled Chapter";
     });
-
-    bindEditableTitle("bookTitle", saveBookTitle);
-    bindEditableTitle("chapterTitle", saveChapterTitle);
 
     updateStats();
     updateCounts();
@@ -388,59 +385,6 @@ function initialize() {
     } catch {
         /* Ignore invalid old session data. */
     }
-}
-
-
-function saveBookTitle() {
-    const titleElement = byId("bookTitle");
-    const cleanTitle = String(titleElement?.textContent || "").trim();
-
-    if (!cleanTitle || !currentBook) {
-        if (titleElement) titleElement.textContent = currentBook?.title || "Untitled Book";
-        return;
-    }
-
-    HerBooks.update(CURRENT_BOOK_ID, { title: cleanTitle });
-    reloadCurrentData();
-    byId("bookTitle").textContent = cleanTitle;
-    byId("drawerBookTitle").textContent = cleanTitle;
-}
-
-function saveChapterTitle() {
-    const titleElement = byId("chapterTitle");
-    const cleanTitle = String(titleElement?.textContent || "").trim();
-
-    if (!cleanTitle || !currentChapter) {
-        if (titleElement) titleElement.textContent = currentChapter?.title || "Untitled Chapter";
-        return;
-    }
-
-    const updated = HerChapters.rename(CURRENT_BOOK_ID, CURRENT_CHAPTER_ID, cleanTitle);
-    if (updated) currentChapter = normalizeChapter(updated);
-    byId("chapterTitle").textContent = cleanTitle;
-    byId("drawerChapterTitle").textContent = cleanTitle;
-}
-
-function bindEditableTitle(elementId, saveHandler) {
-    const element = byId(elementId);
-    if (!element) return;
-
-    element.addEventListener("blur", saveHandler);
-    element.addEventListener("keydown", event => {
-        if (event.key === "Enter") {
-            event.preventDefault();
-            element.blur();
-        }
-
-        if (event.key === "Escape") {
-            event.preventDefault();
-            reloadCurrentData();
-            element.textContent = elementId === "bookTitle"
-                ? currentBook.title || "Untitled Book"
-                : currentChapter.title || "Untitled Chapter";
-            element.blur();
-        }
-    });
 }
 
 function updateStats() {

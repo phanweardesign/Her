@@ -567,18 +567,7 @@
             );
         });
 
-    function refreshBookLibrary() {
-        const search = document.getElementById("searchInput");
-        const query = search ? search.value.trim() : "";
-        renderBooks(query ? HerBookSearch.searchBooks(query) : HerBooks.getAll());
-    }
-
-    window.addEventListener("pageshow", refreshBookLibrary);
-    document.addEventListener("visibilitychange", () => {
-        if (!document.hidden) refreshBookLibrary();
-    });
-
-    refreshBookLibrary();
+    renderBooks();
 </script>
 
 </body>

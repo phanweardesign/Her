@@ -1,0 +1,24 @@
+Her Story Intelligence character scan fix
+
+Root cause
+- pages/workspace.html calls HerCharacters.findByName(bookId, name).
+- js/modules/characters/characters.js did not define findByName().
+- This caused: HerCharacters.findByName is not a function.
+
+Correction
+- Added HerCharacters.findByName(bookId, name).
+- Matching is case-insensitive.
+- Extra spaces are normalized.
+- Existing character nicknames are also checked.
+- Missing or blank names safely return null.
+
+Validation performed
+- Exact-name match: PASS
+- Case-insensitive match: PASS
+- Extra-whitespace match: PASS
+- Nickname match: PASS
+- Unknown-name result: PASS
+- Blank-name result: PASS
+- JavaScript syntax checks for frontend and backend: PASS
+
+This package excludes .git and temporary test pages/files.
