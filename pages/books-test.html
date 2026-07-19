@@ -452,6 +452,7 @@
 
 </main>
 
+<script>localStorage.setItem("her_books", JSON.stringify([{id:"book-1",title:"Test Book",genre:"Fantasy",chapters:[{id:"ch-1",title:"Opening",content:""}]}]));</script>
 <script src="../js/navigation.js"></script>
 <script src="../js/config.js"></script>
 <script src="../js/utils/constants.js"></script>
@@ -567,18 +568,7 @@
             );
         });
 
-    function refreshBookLibrary() {
-        const search = document.getElementById("searchInput");
-        const query = search ? search.value.trim() : "";
-        renderBooks(query ? HerBookSearch.searchBooks(query) : HerBooks.getAll());
-    }
-
-    window.addEventListener("pageshow", refreshBookLibrary);
-    document.addEventListener("visibilitychange", () => {
-        if (!document.hidden) refreshBookLibrary();
-    });
-
-    refreshBookLibrary();
+    renderBooks();
 </script>
 
 </body>
