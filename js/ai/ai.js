@@ -1,39 +1,17 @@
 const HerAI = {
-    async ask(action, text = "") {
-        const response = await fetch("http://localhost:5000/api/ai/ask", {
+    async ask(action, text = "", context = {}, options = {}) {
+        const response = await fetch("/api/ai/ask", {
             method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                action,
-                prompt: text,
-                context: ""
-            })
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action, prompt: text, context, options })
         });
-
-        if (!response.ok) {
-            throw new Error("AI request failed");
-        }
-
-        const data = await response.json();
-
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data.message || `AI request failed (${response.status})`);
         return data.reply;
     },
-
-    async continue(text) {
-        return await this.ask("continue", text);
-    },
-
-    async rewrite(text) {
-        return await this.ask("rewrite", text);
-    },
-
-    async grammar(text) {
-        return await this.ask("grammar", text);
-    },
-
-    async brainstorm(text) {
-        return await this.ask("brainstorm", text);
-    }
+    continueWriting(text, context = {}) { return this.ask("continue", text, context); },
+    continue(text, context = {}) { return this.continueWriting(text, context); },
+    rewrite(text, context = {}, style = "standard") { return this.ask("rewrite", text, context, { style }); },
+    grammar(text, context = {}) { return this.ask("grammar", text, context); },
+    brainstorm(text, context = {}) { return this.ask("brainstorm", text, context); }
 };

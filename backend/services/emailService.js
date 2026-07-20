@@ -1,6 +1,5 @@
-const nodemailer = require("nodemailer");
-
 function createTransporter() {
+    const nodemailer = require("nodemailer");
     const host = process.env.SMTP_HOST;
     const port = Number(process.env.SMTP_PORT || 587);
     const user = process.env.SMTP_USER;
