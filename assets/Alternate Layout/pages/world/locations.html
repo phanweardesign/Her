@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Locations | Her</title>
+    <link rel="stylesheet" href="/css/main.css">
+</head>
+<body class="page-locations">
+
+<header class="app-header">
+    <div class="logo">📚 Her</div>
+    <nav class="navbar">
+        <a class="nav-link" href="/pages/world/world.html">World Bible</a>
+        <a class="nav-link active" href="/pages/world/locations.html">Locations</a>
+        <a class="nav-link" href="/pages/world/organizations.html">Organizations</a>
+        <a class="nav-link" href="/pages/world/timeline.html">Timeline</a>
+    </nav>
+</header>
+
+<main class="container section">
+    <div class="header-left" style="justify-content:space-between;">
+        <div>
+            <h1>📍 Locations</h1>
+            <p class="card-text">Manage places in your current book.</p>
+        </div>
+        <button class="btn" onclick="createLocation()">+ Location</button>
+    </div>
+
+    <section class="location-grid" id="locationGrid" style="margin-top:25px;"></section>
+</main>
+
+<script src="/js/config.js"></script>
+<script src="/js/utils/constants.js"></script>
+<script src="/js/utils/helpers.js"></script>
+<script src="/js/storage.js"></script>
+<script src="/js/modules/books/books.js"></script>
+<script src="/js/modules/world/locations.js"></script>
+<script src="/js/modules/ui/notifications.js"></script>
+<script src="/js/app.js"></script>
+
+<script>
+const book = HerBooks.getCurrent();
+if (!book) window.location.href = "books.html";
+
+function renderLocations() {
+    const locations = HerLocations.getAll(book.id);
+    const grid = document.getElementById("locationGrid");
+
+    if (locations.length === 0) {
+        grid.innerHTML = `<div class="card"><h2 class="card-title">No locations yet</h2><p class="card-text">Create your first place.</p></div>`;
+        return;
+    }
+
+    grid.innerHTML = locations.map(location => `
+        <div class="location-card">
+            <div class="location-card-title">${location.name}</div>
+            <div class="location-card-type">${location.type || "Location"} ${location.region ? "• " + location.region : ""}</div>
+            <div class="location-card-description">${location.description || "No description yet."}</div>
+        </div>
+    `).join("");
+}
+
+function createLocation() {
+    const name = prompt("Location name:");
+    if (!name) return;
+
+    const type = prompt("Location type:", "City") || "City";
+
+    HerLocations.create(book.id, { name, type });
+    HerNotifications.success("Location created");
+    renderLocations();
+}
+
+renderLocations();
+</script>
+
+</body>
+</html>

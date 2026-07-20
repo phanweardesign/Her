@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editor | Her</title>
+    <link rel="stylesheet" href="../css/main.css">
+</head>
+<body class="page-editor">
+
+<div class="editor-shell">
+
+    <aside class="chapter-list">
+        <div class="chapter-list-header" id="bookTitle">Book</div>
+        <div class="chapter-items" id="chapterList"></div>
+        <button class="btn" style="margin:10px;" onclick="createChapter()">+ Chapter</button>
+    </aside>
+
+    <main class="editor-main">
+
+        <div class="editor-topbar">
+            <div>
+                <div class="editor-title" id="chapterTitle">Chapter</div>
+                <div class="word-counter">
+                    <span><strong id="words">0</strong> words</span>
+                    <span id="readingTime">1 min read</span>
+                </div>
+            </div>
+
+            <div class="editor-status" id="saveStatus">Saved</div>
+        </div>
+
+        <div class="rich-text-toolbar">
+            <button class="rich-text-btn" onclick="formatText('bold')">B</button>
+            <button class="rich-text-btn" onclick="formatText('italic')">I</button>
+            <button class="rich-text-btn" onclick="toggleFocus()">Focus</button>
+            <a class="rich-text-btn" href="chapters.html">Back</a>
+        </div>
+
+        <section class="editor-writing-area">
+            <textarea class="editor-textarea" id="editorText" placeholder="Start writing..."></textarea>
+        </section>
+
+    </main>
+
+</div>
+
+<script src="../js/config.js"></script>
+<script src="../js/utils/constants.js"></script>
+<script src="../js/utils/helpers.js"></script>
+<script src="../js/storage.js"></script>
+<script src="../js/modules/books/books.js"></script>
+<script src="../js/modules/books/chapters.js"></script>
+<script src="../js/modules/books/editor.js"></script>
+<script src="../js/modules/books/autosave.js"></script>
+<script src="../js/modules/books/wordcount.js"></script>
+<script src="../js/modules/ui/notifications.js"></script>
+<script src="../js/app.js"></script>
+
+<script>
+const book = HerBooks.getCurrent();
+
+if (!book) {
+    window.location.href = "books.html";
+}
+
+let currentChapterId = localStorage.getItem(HerConfig.storageKeys.currentChapter);
+
+if (!currentChapterId && book.chapters.length > 0) {
+    currentChapterId = book.chapters[0].id;
+}
+
+document.getElementById("bookTitle").textContent = book.title;
+
+function renderChapterList() {
+    const list = document.getElementById("chapterList");
+    const chapters = HerChapters.getAll(book.id);
+
+    list.innerHTML = chapters.map(chapter => `
+        <div class="chapter-item ${chapter.id === currentChapterId ? "active" : ""}"
+             onclick="switchChapter('${chapter.id}')">
+            ${chapter.title}
+        </div>
+    `).join("");
+}
+
+function loadChapter() {
+    const chapter = HerChapters.getAll(book.id).find(ch => ch.id === currentChapterId);
+
+    if (!chapter) return;
+
+    document.getElementById("chapterTitle").textContent = chapter.title;
+    document.getElementById("editorText").value = chapter.content || "";
+
+    updateStats();
+    renderChapterList();
+}
+
+function switchChapter(chapterId) {
+    saveNow();
+    currentChapterId = chapterId;
+    localStorage.setItem(HerConfig.storageKeys.currentChapter, chapterId);
+    loadChapter();
+}
+
+function createChapter() {
+    const title = prompt("Chapter title:") || "New Chapter";
+    HerChapters.create(book.id, title);
+
+    const chapters = HerChapters.getAll(book.id);
+    currentChapterId = chapters[chapters.length - 1].id;
+
+    localStorage.setItem(HerConfig.storageKeys.currentChapter, currentChapterId);
+    loadChapter();
+}
+
+function saveNow() {
+    const content = document.getElementById("editorText").value;
+
+    HerChapters.update(book.id, currentChapterId, {
+        content
+    });
+
+    document.getElementById("saveStatus").textContent = "Saved";
+}
+
+function updateStats() {
+    const text = document.getElementById("editorText").value;
+
+    document.getElementById("words").textContent = HerWordCount.countWords(text);
+    document.getElementById("readingTime").textContent = HerWordCount.estimateReadingTime(text);
+}
+
+document.getElementById("editorText").addEventListener("input", function () {
+    document.getElementById("saveStatus").textContent = "Saving...";
+    updateStats();
+
+    HerAutoSave.save(() => {
+        saveNow();
+    });
+});
+
+function formatText(type) {
+    HerNotifications.info(`${type} formatting will connect when we add rich text.`);
+}
+
+function toggleFocus() {
+    document.body.classList.toggle("focus-mode");
+}
+
+loadChapter();
+</script>
+
+</body>
+</html>

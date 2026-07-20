@@ -119,6 +119,10 @@
 
     </form>
 
+    <div class="footer" style="margin-top:12px;">
+        <a href="forgot-password.html">Forgot password?</a>
+    </div>
+
     <div class="footer">
         Don't have an account?
         <a href="signup.html">Sign up</a>
@@ -160,7 +164,7 @@ form.addEventListener("submit", async (e)=>{
 
         });
 
-        const data = await response.json();
+        const data = await response.json().catch(() => ({}));
 
         if(!response.ok){
 
@@ -172,10 +176,8 @@ form.addEventListener("submit", async (e)=>{
             return;
         }
 
-        localStorage.setItem(
-            "herUser",
-            JSON.stringify(data.user)
-        );
+        localStorage.setItem("her_user", JSON.stringify(data.user));
+        localStorage.setItem("her_auth_token", data.token || "");
 
         window.location.href="../dashboard.html";
 

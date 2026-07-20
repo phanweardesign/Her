@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notes | Her</title>
+    <link rel="stylesheet" href="../css/main.css">
+</head>
+<body class="page-notes">
+
+<header class="app-header">
+    <div class="logo">📚 Her</div>
+    <nav class="navbar">
+        <a class="nav-link" href="dashboard.html">Dashboard</a>
+        <a class="nav-link" href="books.html">Books</a>
+        <a class="nav-link" href="world.html">World Bible</a>
+        <a class="nav-link active" href="notes.html">Notes</a>
+    </nav>
+</header>
+
+<main class="container section">
+    <div class="header-left" style="justify-content:space-between;">
+        <div>
+            <h1>📝 Notes</h1>
+            <p class="card-text">Save ideas, research, scene notes, and story reminders.</p>
+        </div>
+
+        <button class="btn" onclick="createNote()">+ Note</button>
+    </div>
+
+    <section class="book-grid" id="notesGrid" style="margin-top:25px;"></section>
+</main>
+
+<script src="../js/config.js"></script>
+<script src="../js/utils/constants.js"></script>
+<script src="../js/utils/helpers.js"></script>
+<script src="../js/storage.js"></script>
+<script src="../js/modules/books/books.js"></script>
+<script src="../js/modules/notes/notes.js"></script>
+<script src="../js/modules/ui/notifications.js"></script>
+<script src="../js/app.js"></script>
+
+<script>
+const book = HerBooks.getCurrent();
+if (!book) window.location.href = "books.html";
+
+function renderNotes() {
+    const notes = HerNotes.getAll(book.id);
+    const grid = document.getElementById("notesGrid");
+
+    if (notes.length === 0) {
+        grid.innerHTML = `<div class="card"><h2 class="card-title">No notes yet</h2><p class="card-text">Create your first note.</p></div>`;
+        return;
+    }
+
+    grid.innerHTML = notes.map(note => `
+        <div class="card">
+            <h2 class="card-title">${note.title}</h2>
+            <p class="card-text">${note.category || "General"}</p>
+            <p class="card-text">${note.content || "Empty note."}</p>
+            <div class="form-actions">
+                <button class="btn btn-secondary" onclick="editNote('${note.id}')">Edit</button>
+                <button class="btn btn-danger" onclick="deleteNote('${note.id}')">Delete</button>
+            </div>
+        </div>
+    `).join("");
+}
+
+function createNote() {
+    const title = prompt("Note title:");
+    if (!title) return;
+
+    const content = prompt("Note content:") || "";
+    HerNotes.create(book.id, { title, content });
+
+    HerNotifications.success("Note created");
+    renderNotes();
+}
+
+function editNote(noteId) {
+    const note = HerNotes.getAll(book.id).find(n => n.id === noteId);
+    if (!note) return;
+
+    const title = prompt("Note title:", note.title) || note.title;
+    const content = prompt("Note content:", note.content) || note.content;
+
+    HerNotes.update(book.id, noteId, { title, content });
+    HerNotifications.success("Note updated");
+    renderNotes();
+}
+
+function deleteNote(noteId) {
+    if (!confirm("Delete this note?")) return;
+
+    HerNotes.delete(book.id, noteId);
+    HerNotifications.success("Note deleted");
+    renderNotes();
+}
+
+renderNotes();
+</script>
+
+</body>
+</html>

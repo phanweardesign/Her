@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Assistant | Her</title>
+    <link rel="stylesheet" href="/css/main.css">
+</head>
+<body class="page-ai">
+
+<header class="app-header">
+    <div class="logo">📚 Her</div>
+    <nav class="navbar">
+        <a class="nav-link" href="/pages/dashboard.html">Dashboard</a>
+        <a class="nav-link" href="/pages/books/books.html">Books</a>
+        <a class="nav-link active" href="/pages/ai/ai.html">AI Assistant</a>
+        <a class="nav-link" href="/pages/settings/settings.html">Settings</a>
+    </nav>
+</header>
+
+<main class="container section">
+    <h1>🤖 AI Assistant</h1>
+    <p class="card-text">Brainstorm ideas, rewrite text, improve grammar, and develop your story.</p>
+
+    <section class="ai-prompts" style="margin:25px 0;" id="promptGrid"></section>
+
+    <section class="ai-chat">
+        <div class="ai-chat-header">Her Assistant</div>
+
+        <div class="ai-chat-body" id="chatBody">
+            <div class="ai-message assistant">
+                AI is not connected yet, but this page is ready for it.
+            </div>
+        </div>
+
+        <form class="ai-chat-footer input-group" id="aiForm">
+            <input class="input" id="aiInput" placeholder="Ask for story help...">
+            <button class="btn" type="submit">Send</button>
+        </form>
+    </section>
+</main>
+
+<script src="/js/config.js"></script>
+<script src="/js/utils/constants.js"></script>
+<script src="/js/utils/helpers.js"></script>
+<script src="/js/storage.js"></script>
+<script src="/js/modules/ai/ai.js"></script>
+<script src="/js/modules/ai/prompts.js"></script>
+<script src="/js/modules/ui/notifications.js"></script>
+<script src="/js/app.js"></script>
+
+<script>
+const promptGrid = document.getElementById("promptGrid");
+
+promptGrid.innerHTML = HerAIPrompts.getAll().slice(0, 8).map(prompt => `
+    <div class="ai-prompt-card" onclick="usePrompt('${prompt.replace(/'/g, "\\'")}')">
+        <h3>Prompt</h3>
+        <p>${prompt}</p>
+    </div>
+`).join("");
+
+function usePrompt(prompt) {
+    document.getElementById("aiInput").value = prompt;
+}
+
+document.getElementById("aiForm").addEventListener("submit", async function(e) {
+    e.preventDefault();
+
+    const input = document.getElementById("aiInput");
+    const message = input.value.trim();
+    if (!message) return;
+
+    const chat = document.getElementById("chatBody");
+
+    chat.innerHTML += `<div class="ai-message user">${message}</div>`;
+
+    const response = await HerAI.ask(message);
+
+    chat.innerHTML += `<div class="ai-message assistant">${response}</div>`;
+    input.value = "";
+    chat.scrollTop = chat.scrollHeight;
+});
+</script>
+
+</body>
+</html>

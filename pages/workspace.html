@@ -70,12 +70,6 @@ html,body{background:var(--her-bg);color:var(--her-text)}
     color:var(--her-text);
     border-color:var(--her-border);
 }
-
-.workspace-title{min-width:0;display:flex;flex-direction:column;gap:1px;flex:1}
-.workspace-title-input{display:block;width:min(100%,520px);margin:0;padding:0;border:0;outline:0;background:transparent;color:var(--her-text);font:inherit;line-height:1.2;text-overflow:ellipsis}
-.book-title-input{font-weight:700;font-size:16px}
-.chapter-title-input{font-size:13px;color:var(--her-muted)}
-.workspace-title-input:focus{border-bottom:1px solid var(--her-purple);background:rgba(139,92,246,.08)}
 @media(max-width:600px){
     .workspace-header{padding-top:max(10px,env(safe-area-inset-top))}
     .ai-toolbar{
@@ -113,11 +107,9 @@ html,body{background:var(--her-bg);color:var(--her-text)}
 
     <header class="workspace-header">
         <button class="icon-button" onclick="toggleDrawer()" aria-label="Open menu">☰</button>
-        <div class="workspace-title" aria-label="Current book and chapter">
-            <input id="bookTitle" class="workspace-title-input book-title-input" type="text"
-                value="Untitled Book" aria-label="Book title" title="Edit book title">
-            <input id="chapterTitle" class="workspace-title-input chapter-title-input" type="text"
-                value="Chapter 1" aria-label="Chapter title" title="Edit chapter title">
+        <div class="workspace-title">
+            <strong id="bookTitle">Untitled Book</strong>
+            <span id="chapterTitle">Chapter 1</span>
         </div>
         <span class="save-status" id="saveStatus">Saved ✓</span>
     </header>
@@ -217,20 +209,6 @@ html,body{background:var(--her-bg);color:var(--her-text)}
 <script src="../js/modules/ai/ai.js"></script>
 <script src="../js/modules/ai/storyIntelligence.js"></script>
 <script>
-
-const byId = (elementId) => document.getElementById(elementId);
-const editor = byId("storyEditor");
-
-let saveTimer = null;
-let suggestionTimer = null;
-let lastAIAction = "";
-let lastAIResponse = "";
-let originalText = "";
-let currentBrainstormBatch = [];
-let lastRewrite = {
-    style: "standard",
-    input: ""
-};
 
 function openDashboard() {
     window.location.href = "dashboard.html";
@@ -336,7 +314,6 @@ function saveNow() {
 
     if (saved) {
         currentChapter = normalizeChapter(saved);
-        currentBook = HerBooks.getAll().find(item => item.id === CURRENT_BOOK_ID) || currentBook;
     }
 
     localStorage.setItem(
@@ -349,85 +326,26 @@ function saveNow() {
         })
     );
 
-    byId("saveStatus").textContent = "Saved ✓";
+    $("saveStatus").textContent = "Saved ✓";
     updateCounts();
 }
 
 function scheduleSave() {
-    byId("saveStatus").textContent = "Saving...";
+    $("saveStatus").textContent = "Saving...";
     clearTimeout(saveTimer);
     saveTimer = setTimeout(saveNow, 450);
 }
 
-function refreshWorkspaceTitles() {
-    reloadCurrentData();
-
-    const bookTitle = currentBook?.title || "Untitled Book";
-    const chapterTitle = currentChapter?.title || "Untitled Chapter";
-
-    byId("bookTitle").value = bookTitle;
-    byId("chapterTitle").value = chapterTitle;
-    byId("drawerBookTitle").textContent = bookTitle;
-    byId("drawerChapterTitle").textContent = chapterTitle;
-}
-
-function saveBookTitle() {
-    const input = byId("bookTitle");
-    const title = input.value.trim();
-
-    if (!title) {
-        input.value = currentBook.title || "Untitled Book";
-        return;
-    }
-
-    if (title !== currentBook.title) {
-        HerBooks.update(CURRENT_BOOK_ID, { title });
-        currentBook = HerBooks.getAll().find(item => item.id === CURRENT_BOOK_ID) || currentBook;
-    }
-
-    refreshWorkspaceTitles();
-    byId("saveStatus").textContent = "Saved ✓";
-}
-
-function saveChapterTitle() {
-    const input = byId("chapterTitle");
-    const title = input.value.trim();
-
-    if (!title) {
-        input.value = currentChapter.title || "Untitled Chapter";
-        return;
-    }
-
-    const renamed = HerChapters.rename(CURRENT_BOOK_ID, CURRENT_CHAPTER_ID, title);
-    if (renamed) currentChapter = normalizeChapter(renamed);
-
-    refreshWorkspaceTitles();
-    byId("saveStatus").textContent = "Saved ✓";
-}
-
-function handleTitleKeydown(event, saveFunction) {
-    if (event.key === "Enter") {
-        event.preventDefault();
-        saveFunction();
-        event.currentTarget.blur();
-    } else if (event.key === "Escape") {
-        event.preventDefault();
-        refreshWorkspaceTitles();
-        event.currentTarget.blur();
-    }
-}
-
 function initialize() {
-    if (!editor) {
-        throw new Error("Workspace editor element was not found.");
-    }
-    if (!currentBook || !currentChapter) {
-        return;
-    }
-
     editor.value = currentChapter.content || currentChapter.manuscript || "";
 
-    refreshWorkspaceTitles();
+    ["bookTitle", "drawerBookTitle"].forEach(id => {
+        $(id).textContent = currentBook.title || "Untitled Book";
+    });
+
+    ["chapterTitle", "drawerChapterTitle"].forEach(id => {
+        $(id).textContent = currentChapter.title || "Untitled Chapter";
+    });
 
     updateStats();
     updateCounts();
@@ -450,26 +368,26 @@ function initialize() {
 function updateStats() {
     const text = editor.value.trim();
     const words = text ? text.split(/\s+/).length : 0;
-    byId("wordCount").textContent = `${words} words`;
-    byId("readTime").textContent = `${Math.max(1, Math.ceil(words / 200))} min read`;
+    $("wordCount").textContent = `${words} words`;
+    $("readTime").textContent = `${Math.max(1, Math.ceil(words / 200))} min read`;
 }
 
 function updateCounts() {
-    byId("chapterCounts").textContent =
+    $("chapterCounts").textContent =
         `${chapter().ideas.length} ideas · ${chapter().plotPoints.length} plot points`;
-    byId("memoryStrip").firstElementChild.textContent =
+    $("memoryStrip").firstElementChild.textContent =
         chapter().summary ? "AI memory updated" : "AI memory needs a chapter summary";
 }
 
 function toggleDrawer() {
-    byId("drawer").classList.toggle("open");
-    byId("overlay").classList.toggle("open");
+    $("drawer").classList.toggle("open");
+    $("overlay").classList.toggle("open");
 }
 
 function closeDrawer() {
-    byId("drawer").classList.remove("open");
-    if (!byId("resultPanel").classList.contains("open") && !byId("libraryPanel").classList.contains("open")) {
-        byId("overlay").classList.remove("open");
+    $("drawer").classList.remove("open");
+    if (!$("resultPanel").classList.contains("open") && !$("libraryPanel").classList.contains("open")) {
+        $("overlay").classList.remove("open");
     }
 }
 
@@ -478,15 +396,15 @@ function openPanel(panel) {
     closePanels(false);
     panel.classList.add("open");
     panel.setAttribute("aria-hidden", "false");
-    byId("overlay").classList.add("open");
+    $("overlay").classList.add("open");
 }
 
 function closePanels(closeOverlay = true) {
-    [byId("resultPanel"), byId("libraryPanel")].forEach(panel => {
+    [$("resultPanel"), $("libraryPanel")].forEach(panel => {
         panel.classList.remove("open");
         panel.setAttribute("aria-hidden", "true");
     });
-    if (closeOverlay) byId("overlay").classList.remove("open");
+    if (closeOverlay) $("overlay").classList.remove("open");
 }
 
 function selectedText() {
@@ -552,17 +470,17 @@ function titleFor(action) {
 }
 
 function loading(action) {
-    byId("resultTitle").textContent = titleFor(action);
-    byId("resultStatus").textContent = "Her is thinking...";
-    byId("resultBody").innerHTML = '<div class="loading"><i></i><i></i><i></i></div>';
-    byId("resultFooter").innerHTML = '<button class="secondary" onclick="closePanels()">Cancel</button>';
-    openPanel(byId("resultPanel"));
+    $("resultTitle").textContent = titleFor(action);
+    $("resultStatus").textContent = "Her is thinking...";
+    $("resultBody").innerHTML = '<div class="loading"><i></i><i></i><i></i></div>';
+    $("resultFooter").innerHTML = '<button class="secondary" onclick="closePanels()">Cancel</button>';
+    openPanel($("resultPanel"));
 }
 
 function errorResult(error) {
-    byId("resultStatus").textContent = "Something went wrong";
-    byId("resultBody").textContent = error?.message || "AI request failed.";
-    byId("resultFooter").innerHTML =
+    $("resultStatus").textContent = "Something went wrong";
+    $("resultBody").textContent = error?.message || "AI request failed.";
+    $("resultFooter").innerHTML =
         `<button onclick="runAI('${lastAIAction}')">Try again</button>
          <button class="secondary" onclick="closePanels()">Close</button>`;
 }
@@ -581,7 +499,7 @@ async function runAI(action, options = {}) {
     try {
         const reply = await HerAI.ask(action, input, buildMemory(), options);
         lastAIResponse = String(reply || "").trim();
-        byId("resultStatus").textContent = "Ready";
+        $("resultStatus").textContent = "Ready";
 
         if (action === "brainstorm") return showBrainstorms(reply);
         if (action === "section_starter") return showStarter(reply);
@@ -613,7 +531,7 @@ function showBrainstorms(reply) {
 }
 
 function renderBrainstormResult() {
-    byId("resultBody").innerHTML = `
+    $("resultBody").innerHTML = `
         <p class="note">Select two or more ideas to combine them.</p>
         <div class="card-list">${currentBrainstormBatch.map((text, index) => `
             <article class="card selectable">
@@ -629,7 +547,7 @@ function renderBrainstormResult() {
 
 function updateBrainstormActions() {
     const count = document.querySelectorAll(".brainstorm-check:checked").length;
-    byId("resultFooter").innerHTML = `
+    $("resultFooter").innerHTML = `
         <button ${count < 2 ? "disabled" : ""} onclick="combineSelected()">Combine selected (${count})</button>
         <button class="secondary" onclick="runAI('brainstorm')">Generate more</button>`;
 }
@@ -640,8 +558,8 @@ async function regenerateIdea(index) {
     try {
         const reply = await HerAI.ask("regenerate_idea", oldIdea, buildMemory());
         currentBrainstormBatch[index] = String(reply).trim();
-        byId("resultTitle").textContent = "Brainstorm";
-        byId("resultStatus").textContent = "One idea regenerated";
+        $("resultTitle").textContent = "Brainstorm";
+        $("resultStatus").textContent = "One idea regenerated";
         renderBrainstormResult();
     } catch (error) { errorResult(error); }
 }
@@ -657,7 +575,7 @@ function saveIdea(text, source = "brainstorm") {
     if (!clean || chapter().ideas.some(x => x.text === clean)) return;
     chapter().ideas.push({ id: id("idea"), text: clean, source, createdAt: new Date().toISOString() });
     saveNow();
-    byId("resultStatus").textContent = "Idea saved";
+    $("resultStatus").textContent = "Idea saved";
 }
 
 function showStarter(reply) {
@@ -665,8 +583,8 @@ function showStarter(reply) {
     const starter = { id: id("starter"), text, createdAt: new Date().toISOString() };
     chapter().sectionStarters.push(starter);
     saveNow();
-    byId("resultBody").innerHTML = `<article class="starter-card"><small>Suggested first line</small><p>${esc(text)}</p></article>`;
-    byId("resultFooter").innerHTML = `
+    $("resultBody").innerHTML = `<article class="starter-card"><small>Suggested first line</small><p>${esc(text)}</p></article>`;
+    $("resultFooter").innerHTML = `
         <button onclick="insertText(${JSON.stringify(text)})">Use line</button>
         <button class="secondary" onclick="saveIdea(${JSON.stringify(text)}, 'flow-starter')">Save as Idea</button>
         <button class="secondary" onclick="runAI('section_starter')">Another</button>`;
@@ -674,24 +592,24 @@ function showStarter(reply) {
 
 function showStandard(action, reply) {
     lastAIResponse = String(reply || "").trim();
-    byId("resultBody").textContent = lastAIResponse;
+    $("resultBody").textContent = lastAIResponse;
 
     if (action === "continue") {
-        byId("resultFooter").innerHTML = `
+        $("resultFooter").innerHTML = `
             <button onclick="insertText(lastAIResponse)">Insert</button>
             <button class="secondary" onclick="runAI('continue')">Generate again</button>`;
         return;
     }
 
     if (action === "rewrite") {
-        byId("resultFooter").innerHTML = `
+        $("resultFooter").innerHTML = `
             <button onclick="acceptRewrite()">Accept changes</button>
             <button class="secondary" onclick="redoRewrite()">Redo rewrite</button>
             <button class="secondary" onclick="closePanels()">Keep original</button>`;
         return;
     }
 
-    byId("resultFooter").innerHTML = `
+    $("resultFooter").innerHTML = `
         <button onclick="replaceSelectionOrEditor(lastAIResponse)">Accept changes</button>
         <button class="secondary" onclick="closePanels()">Keep original</button>`;
 }
@@ -710,8 +628,8 @@ function replaceSelectionOrEditor(text) {
     updateStats(); saveNow(); closePanels();
 }
 
-function openRewriteMenu() { byId("rewriteModal").classList.add("open"); }
-function closeRewriteMenu() { byId("rewriteModal").classList.remove("open"); }
+function openRewriteMenu() { $("rewriteModal").classList.add("open"); }
+function closeRewriteMenu() { $("rewriteModal").classList.remove("open"); }
 
 function runRewrite(style) {
     closeRewriteMenu();
@@ -763,19 +681,19 @@ function showContinuity(reply) {
         createdAt: new Date().toISOString()
     }));
     saveNow();
-    byId("resultBody").innerHTML = issues.length
+    $("resultBody").innerHTML = issues.length
         ? `<div class="card-list">${issues.map(x => `<article class="card"><strong>${esc(x.severity || "Review")}</strong><p>${esc(x.text || x)}</p></article>`).join("")}</div>`
         : '<div class="empty">No continuity problems found.</div>';
-    byId("resultFooter").innerHTML = `<button onclick="openLibrary('continuity')">Open continuity list</button>`;
+    $("resultFooter").innerHTML = `<button onclick="openLibrary('continuity')">Open continuity list</button>`;
 }
 
 function saveChapterSummary(reply) {
     chapter().summary = String(reply || "").trim();
     chapter().summaryUpdatedAt = new Date().toISOString();
     saveNow();
-    byId("resultBody").textContent = chapter().summary;
-    byId("resultStatus").textContent = "Chapter memory updated";
-    byId("resultFooter").innerHTML = `
+    $("resultBody").textContent = chapter().summary;
+    $("resultStatus").textContent = "Chapter memory updated";
+    $("resultFooter").innerHTML = `
         <button onclick="runAI('book_summary')">Update book summary</button>
         <button class="secondary" onclick="closePanels()">Done</button>`;
 }
@@ -789,14 +707,14 @@ function saveBookSummary(reply) {
 
     currentBook.bookSummary = summary;
 
-    byId("resultBody").textContent = summary;
-    byId("resultStatus").textContent = "Book memory updated";
-    byId("resultFooter").innerHTML = `<button onclick="closePanels()">Done</button>`;
+    $("resultBody").textContent = summary;
+    $("resultStatus").textContent = "Book memory updated";
+    $("resultFooter").innerHTML = `<button onclick="closePanels()">Done</button>`;
 }
 
 function openLibrary(type) {
     closeDrawer();
-    openPanel(byId("libraryPanel"));
+    openPanel($("libraryPanel"));
     [...document.querySelectorAll("[data-tab]")].forEach(x => x.classList.toggle("active", x.dataset.tab === type));
     renderLibrary(type);
 }
@@ -810,30 +728,30 @@ function renderLibrary(type) {
         summaries: ["AI Memory", []]
     };
     const [title, items] = map[type];
-    byId("libraryTitle").textContent = title;
+    $("libraryTitle").textContent = title;
 
     if (type === "summaries") {
-        byId("libraryStatus").textContent = chapter().summary ? "Memory available" : "No summary yet";
-        byId("libraryBody").innerHTML = `
+        $("libraryStatus").textContent = chapter().summary ? "Memory available" : "No summary yet";
+        $("libraryBody").innerHTML = `
             <article class="card"><strong>Chapter summary</strong><p>${esc(chapter().summary || "No chapter summary yet.")}</p></article>
             <article class="card"><strong>Book summary</strong><p>${esc(book().bookSummary || "No book summary yet.")}</p></article>`;
-        byId("libraryFooter").innerHTML = `
+        $("libraryFooter").innerHTML = `
             <button onclick="runAI('chapter_summary')">Update chapter</button>
             <button class="secondary" onclick="runAI('book_summary')">Update book</button>`;
         return;
     }
 
-    byId("libraryStatus").textContent = `${items.length} saved`;
+    $("libraryStatus").textContent = `${items.length} saved`;
     if (type === "plotPoints") {
-        byId("libraryBody").innerHTML = `
+        $("libraryBody").innerHTML = `
             <div class="manual-entry"><textarea id="plotPointInput" placeholder="Add an important fact, reveal, promise, mystery, or event..."></textarea>
             <button onclick="addPlotPoint()">Add Plot Point</button></div>
             ${renderCards(items, type)}`;
     } else {
-        byId("libraryBody").innerHTML = renderCards(items, type);
+        $("libraryBody").innerHTML = renderCards(items, type);
     }
 
-    byId("libraryFooter").innerHTML =
+    $("libraryFooter").innerHTML =
         type === "brainstorms" ? `<button onclick="runAI('brainstorm')">New brainstorm</button>` :
         type === "continuity" ? `<button onclick="runAI('continuity_check')">Check again</button>` : "";
 }
@@ -853,7 +771,7 @@ function renderCards(items, type) {
 }
 
 function addPlotPoint() {
-    const input = byId("plotPointInput");
+    const input = $("plotPointInput");
     const text = input.value.trim();
     if (!text) return;
     chapter().plotPoints.push({ id: id("plot"), text, createdAt: new Date().toISOString() });
@@ -874,32 +792,32 @@ function resolveIssue(itemId) {
 
 function requestLiveSuggestion() {
     clearTimeout(suggestionTimer);
-    byId("suggestionChip").classList.add("hidden");
+    $("suggestionChip").classList.add("hidden");
     const text = editor.value.trim();
     if (!text || !/[.!?]["']?$/.test(text)) return;
 
     suggestionTimer = setTimeout(async () => {
         try {
             const reply = await HerAI.ask("section_starter", text.slice(-2500), buildMemory());
-            byId("suggestionChip").textContent = String(reply).replace(/^["“]|["”]$/g, "").trim();
-            byId("suggestionChip").classList.remove("hidden");
+            $("suggestionChip").textContent = String(reply).replace(/^["“]|["”]$/g, "").trim();
+            $("suggestionChip").classList.remove("hidden");
         } catch { /* live suggestions fail quietly */ }
     }, 1800);
 }
 
 function useLiveSuggestion() {
-    insertText(byId("suggestionChip").textContent);
-    byId("suggestionChip").classList.add("hidden");
+    insertText($("suggestionChip").textContent);
+    $("suggestionChip").classList.add("hidden");
 }
 
 
 let detectedCharacterSuggestions=[];
-async function scanStoryCharacters(){const manuscript=editor.value.trim();if(!manuscript){alert("Write part of the chapter before scanning.");return;} saveNow(); byId("resultTitle").textContent="Story Intelligence"; byId("resultStatus").textContent="Scanning for new characters..."; byId("resultBody").innerHTML='<div class="loading"><i></i><i></i><i></i></div>'; byId("resultFooter").innerHTML='<button class="secondary" onclick="closePanels()">Cancel</button>'; openPanel(byId("resultPanel")); try{const currentBook=HerBooks.getCurrent();const currentChapter=HerChapters.find(CURRENT_BOOK_ID,CURRENT_CHAPTER_ID);const result=await HerStoryIntelligence.scanCharacters({book:currentBook,chapter:currentChapter,manuscript});detectedCharacterSuggestions=result.characters.filter(s=>!HerCharacters.findByName(CURRENT_BOOK_ID,s.name));renderCharacterSuggestions();}catch(e){errorResult(e)}}
-function renderCharacterSuggestions(){if(!detectedCharacterSuggestions.length){byId("resultTitle").textContent="New Characters";byId("resultStatus").textContent="No new named characters found";byId("resultBody").innerHTML='<div class="empty">Her did not find any new named characters missing from this book.</div>';byId("resultFooter").innerHTML='<button onclick="closePanels()">Done</button>';return;} byId("resultTitle").textContent="New Characters";byId("resultStatus").textContent=`${detectedCharacterSuggestions.length} suggestion${detectedCharacterSuggestions.length===1?'':'s'}`;byId("resultBody").innerHTML='<div class="card-list">'+detectedCharacterSuggestions.map((s,i)=>`<article class="story-scan-card"><h3>${esc(s.name)}</h3><div class="story-scan-meta">${esc(s.role||'Supporting Character')}${s.age?' • Age '+esc(s.age):''}${s.occupation?' • '+esc(s.occupation):''}</div>${s.relationships.length?`<p>${esc(s.relationships.join(' • '))}</p>`:''}${s.evidence?`<p class="story-scan-evidence">${esc(s.evidence)}</p>`:''}<div class="small-actions"><button onclick="acceptDetectedCharacter(${i})">Add Draft Profile</button><button class="secondary" onclick="ignoreDetectedCharacter(${i})">Ignore</button></div></article>`).join('')+'</div>';byId("resultFooter").innerHTML='<button onclick="acceptAllDetectedCharacters()">Accept All</button><button class="secondary" onclick="closePanels()">Review Later</button>';}
+async function scanStoryCharacters(){const manuscript=editor.value.trim();if(!manuscript){alert("Write part of the chapter before scanning.");return;} saveNow(); $("resultTitle").textContent="Story Intelligence"; $("resultStatus").textContent="Scanning for new characters..."; $("resultBody").innerHTML='<div class="loading"><i></i><i></i><i></i></div>'; $("resultFooter").innerHTML='<button class="secondary" onclick="closePanels()">Cancel</button>'; openPanel($("resultPanel")); try{const currentBook=HerBooks.getCurrent();const currentChapter=HerChapters.find(CURRENT_BOOK_ID,CURRENT_CHAPTER_ID);const result=await HerStoryIntelligence.scanCharacters({book:currentBook,chapter:currentChapter,manuscript});detectedCharacterSuggestions=result.characters.filter(s=>!HerCharacters.findByName(CURRENT_BOOK_ID,s.name));renderCharacterSuggestions();}catch(e){errorResult(e)}}
+function renderCharacterSuggestions(){if(!detectedCharacterSuggestions.length){$("resultTitle").textContent="New Characters";$("resultStatus").textContent="No new named characters found";$("resultBody").innerHTML='<div class="empty">Her did not find any new named characters missing from this book.</div>';$("resultFooter").innerHTML='<button onclick="closePanels()">Done</button>';return;} $("resultTitle").textContent="New Characters";$("resultStatus").textContent=`${detectedCharacterSuggestions.length} suggestion${detectedCharacterSuggestions.length===1?'':'s'}`;$("resultBody").innerHTML='<div class="card-list">'+detectedCharacterSuggestions.map((s,i)=>`<article class="story-scan-card"><h3>${esc(s.name)}</h3><div class="story-scan-meta">${esc(s.role||'Supporting Character')}${s.age?' • Age '+esc(s.age):''}${s.occupation?' • '+esc(s.occupation):''}</div>${s.relationships.length?`<p>${esc(s.relationships.join(' • '))}</p>`:''}${s.evidence?`<p class="story-scan-evidence">${esc(s.evidence)}</p>`:''}<div class="small-actions"><button onclick="acceptDetectedCharacter(${i})">Add Draft Profile</button><button class="secondary" onclick="ignoreDetectedCharacter(${i})">Ignore</button></div></article>`).join('')+'</div>';$("resultFooter").innerHTML='<button onclick="acceptAllDetectedCharacters()">Accept All</button><button class="secondary" onclick="closePanels()">Review Later</button>';}
 function acceptDetectedCharacter(i){const s=detectedCharacterSuggestions[i];if(!s)return;HerStoryIntelligence.acceptCharacter(CURRENT_BOOK_ID,CURRENT_CHAPTER_ID,s);detectedCharacterSuggestions.splice(i,1);renderCharacterSuggestions()} function ignoreDetectedCharacter(i){detectedCharacterSuggestions.splice(i,1);renderCharacterSuggestions()} function acceptAllDetectedCharacters(){detectedCharacterSuggestions.forEach(s=>HerStoryIntelligence.acceptCharacter(CURRENT_BOOK_ID,CURRENT_CHAPTER_ID,s));detectedCharacterSuggestions=[];renderCharacterSuggestions()}
 
-function openTools() { closeDrawer(); byId("toolsModal").classList.add("open"); }
-function closeTools() { byId("toolsModal").classList.remove("open"); }
+function openTools() { closeDrawer(); $("toolsModal").classList.add("open"); }
+function closeTools() { $("toolsModal").classList.remove("open"); }
 
 function downloadFile(name, content, type) {
     const blob = new Blob([content], { type });
@@ -912,7 +830,7 @@ function downloadFile(name, content, type) {
 function exportBookText() {
     reloadCurrentData();
     const text = (Array.isArray(book().chapters) ? book().chapters : [])
-        .map(c => `${c.title || "Untitled Chapter"}\n\n${c.manuscript || c.content || ""}`).join("\n\n\n");
+        .map(c => `${c.title}\n\n${c.manuscript || ""}`).join("\n\n\n");
     downloadFile(`${book().title || "Her-Book"}.txt`, text, "text/plain");
 }
 
@@ -936,25 +854,13 @@ async function importBackup(event) {
     }
 }
 
-if (editor && currentBook && currentChapter) {
-    byId("bookTitle").addEventListener("blur", saveBookTitle);
-byId("bookTitle").addEventListener("keydown", event => handleTitleKeydown(event, saveBookTitle));
-byId("chapterTitle").addEventListener("blur", saveChapterTitle);
-byId("chapterTitle").addEventListener("keydown", event => handleTitleKeydown(event, saveChapterTitle));
-
-window.addEventListener("pageshow", refreshWorkspaceTitles);
-window.addEventListener("storage", event => {
-    if (event.key === HerConfig.storageKeys.books) refreshWorkspaceTitles();
-});
-
 editor.addEventListener("input", () => {
-        updateStats();
-        scheduleSave();
-        requestLiveSuggestion();
-    });
-    window.addEventListener("beforeunload", saveNow);
-    initialize();
-}
+    updateStats();
+    scheduleSave();
+    requestLiveSuggestion();
+});
+window.addEventListener("beforeunload", saveNow);
+initialize();
 </script>
 </body>
 </html>

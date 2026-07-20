@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Books | Her</title>
+    <link rel="stylesheet" href="../css/main.css">
+</head>
+<body class="page-home">
+
+<header class="app-header">
+    <div class="logo">📚 Her</div>
+    <nav class="navbar">
+        <a class="nav-link" href="dashboard.html">Dashboard</a>
+        <a class="nav-link active" href="books.html">Books</a>
+        <a class="nav-link" href="characters.html">Characters</a>
+        <a class="nav-link" href="world.html">World Bible</a>
+    </nav>
+</header>
+
+<main class="container section">
+
+    <div class="header-left" style="justify-content:space-between;">
+        <div>
+            <h1>Your Books</h1>
+            <p class="card-text">Create, search, and open your manuscripts.</p>
+        </div>
+
+        <button class="btn" onclick="createBook()">+ New Book</button>
+    </div>
+
+    <div class="search-box" style="margin:25px 0; width:100%;">
+        <input class="search-input" id="searchInput" placeholder="Search books...">
+        <span class="search-icon">🔍</span>
+    </div>
+
+    <section class="book-grid" id="bookGrid"></section>
+
+</main>
+
+<script src="../js/config.js"></script>
+<script src="../js/utils/constants.js"></script>
+<script src="../js/utils/helpers.js"></script>
+<script src="../js/storage.js"></script>
+<script src="../js/modules/books/books.js"></script>
+<script src="../js/modules/books/search.js"></script>
+<script src="../js/modules/ui/notifications.js"></script>
+<script src="../js/app.js"></script>
+
+<script>
+function renderBooks(list = HerBooks.getAll()) {
+    const grid = document.getElementById("bookGrid");
+
+    if (list.length === 0) {
+        grid.innerHTML = `<div class="card"><h2 class="card-title">No books yet</h2><p class="card-text">Create your first book to begin.</p></div>`;
+        return;
+    }
+
+    grid.innerHTML = list.map(book => `
+        <div class="card" onclick="openBook('${book.id}')">
+            <h2 class="card-title">${book.title}</h2>
+            <p class="card-text">${book.genre || "No genre yet"}</p>
+            <p class="card-text">${(book.chapters || []).length} chapter(s)</p>
+        </div>
+    `).join("");
+}
+
+function createBook() {
+    const title = prompt("Book title:");
+    if (!title) return;
+
+    const genre = prompt("Genre:") || "";
+    const book = HerBooks.create(title, genre);
+
+    HerNotifications.success("Book created");
+    openBook(book.id);
+}
+
+function openBook(bookId) {
+    HerBooks.setCurrent(bookId);
+    window.location.href = "chapters.html";
+}
+
+document.getElementById("searchInput").addEventListener("input", function () {
+    renderBooks(HerBookSearch.searchBooks(this.value));
+});
+
+renderBooks();
+</script>
+
+</body>
+</html>
