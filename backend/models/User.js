@@ -17,6 +17,12 @@ const userSchema = new mongoose.Schema(
             trim: true
         },
 
+        phone: {
+            type: String,
+            trim: true,
+            default: ""
+        },
+
         password: {
             type: String,
             required: true
@@ -29,6 +35,19 @@ const userSchema = new mongoose.Schema(
     },
     {
         timestamps: true
+    }
+);
+
+userSchema.index(
+    { phone: 1 },
+    {
+        unique: true,
+        partialFilterExpression: {
+            phone: {
+                $type: "string",
+                $ne: ""
+            }
+        }
     }
 );
 
