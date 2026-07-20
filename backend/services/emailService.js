@@ -25,13 +25,13 @@ async function sendPasswordResetCode({ to, code }) {
         from,
         to,
         subject: "Your Her password reset code",
-        text: `Your Her password reset code is ${code}. It expires in 1 minute. If you did not request this, you can ignore this email.`,
+        text: `Your Her password reset code is ${code}. It expires in 15 minutes. If you did not request this, you can ignore this email.`,
         html: `
             <div style="font-family:Arial,sans-serif;line-height:1.5;color:#222">
                 <h2 style="color:#5B3FD6">Her Password Reset</h2>
                 <p>Use this code to reset your password:</p>
                 <p style="font-size:32px;font-weight:bold;letter-spacing:8px;margin:20px 0">${code}</p>
-                <p>This code expires in <strong>1 minute</strong>.</p>
+                <p>This code expires in <strong>15 minutes</strong>.</p>
                 <p>If you did not request this, you can ignore this email.</p>
             </div>
         `

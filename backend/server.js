@@ -9,7 +9,7 @@ const aiRoutes = require("./routes/aiRoutes");
 
 const app = express();
 const frontendRoot = path.resolve(__dirname, "..");
-const APP_VERSION = process.env.APP_VERSION || "10.1.0";
+const APP_VERSION = process.env.APP_VERSION || "10.1.1";
 
 app.disable("x-powered-by");
 app.use(cors({ origin: true, credentials: true }));

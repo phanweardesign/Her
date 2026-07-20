@@ -4,8 +4,8 @@ const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 const { sendPasswordResetCode } = require("../services/emailService");
 
-const RESET_CODE_LIFETIME_MS = 60 * 1000;
-const RESET_RESEND_COOLDOWN_MS = 60 * 1000;
+const RESET_CODE_LIFETIME_MS = 15 * 60 * 1000;
+const RESET_RESEND_COOLDOWN_MS = 30 * 1000;
 const MAX_RESET_ATTEMPTS = 5;
 
 function publicUser(user) {
@@ -156,9 +156,9 @@ exports.forgotPassword = async (req, res) => {
         }
 
         return res.json({
-            message: "A six-digit reset code was sent to your email. It expires in 1 minute.",
-            expiresInSeconds: 60,
-            resendAfterSeconds: 60
+            message: "A six-digit reset code was sent to your email. It expires in 15 minutes.",
+            expiresInSeconds: 900,
+            resendAfterSeconds: 30
         });
     } catch (error) {
         console.error("Forgot password error:", error);
