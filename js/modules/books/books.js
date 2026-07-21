@@ -48,9 +48,7 @@ const HerBooks = {
         const books = this.getAll();
         const currentId = localStorage.getItem(HerConfig.storageKeys.currentBook);
 
-        return books.find(
-            book => String(book.id) === String(currentId)
-        ) || null;
+        return books.find(book => book.id === currentId) || null;
     },
 
     setCurrent(bookId) {
@@ -70,9 +68,7 @@ const HerBooks = {
     },
 
     delete(bookId) {
-        const books = this.getAll().filter(
-            book => String(book.id) !== String(bookId)
-        );
-        saveBooks(books, { allowEmpty: true });
+        const books = this.getAll().filter(book => book.id !== bookId);
+        this.saveAll(books);
     }
 };

@@ -456,6 +456,7 @@
 <script src="../js/config.js"></script>
 <script src="../js/utils/constants.js"></script>
 <script src="../js/utils/helpers.js"></script>
+<script src="../js/services/cloudBooks.js"></script>
 <script src="../js/storage.js"></script>
 <script src="../js/modules/books/books.js"></script>
 <script src="../js/modules/books/search.js"></script>
@@ -567,28 +568,29 @@
             );
         });
 
-    function initializeBookLibrary() {
+    async function initializeBookLibrary() {
+        const grid = document.getElementById("bookGrid");
+        grid.innerHTML = `
+            <div class="empty-state">
+                <h2>Loading your books...</h2>
+                <p>Syncing your writing library.</p>
+            </div>
+        `;
+
         try {
-            renderBooks(HerBooks.getAll());
+            await HerCloudBooks.hydrate();
         } catch (error) {
-            console.error("Her could not display the book library.", error);
-            const grid = document.getElementById("bookGrid");
-            if (grid) {
-                grid.innerHTML = `
-                    <div class="empty-state">
-                        <h2>Books could not be loaded</h2>
-                        <p>Refresh the page. Your saved library has not been deleted.</p>
-                    </div>
-                `;
+            console.error("Unable to load cloud books:", error);
+            if (error.status === 401) {
+                localStorage.removeItem("her_auth_token");
             }
+            // Local books remain available if the server is temporarily down.
         }
+
+        renderBooks();
     }
 
-    if (document.readyState === "loading") {
-        document.addEventListener("DOMContentLoaded", initializeBookLibrary, { once: true });
-    } else {
-        initializeBookLibrary();
-    }
+    initializeBookLibrary();
 </script>
 
 </body>

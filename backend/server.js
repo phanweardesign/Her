@@ -6,6 +6,7 @@ const cors = require("cors");
 const connectDB = require("./config/db");
 const authRoutes = require("./routes/authRoutes");
 const aiRoutes = require("./routes/aiRoutes");
+const bookRoutes = require("./routes/bookRoutes");
 
 const app = express();
 const frontendRoot = path.resolve(__dirname, "..");
@@ -30,6 +31,7 @@ app.get("/api/health", (req, res) => {
 
 app.use("/api/auth", authRoutes);
 app.use("/api/ai", aiRoutes);
+app.use("/api/books", bookRoutes);
 
 app.use(express.static(frontendRoot));
 app.get("/", (req, res) => res.sendFile(path.join(frontendRoot, "index.html")));
@@ -51,6 +53,7 @@ async function start() {
         app.listen(PORT, "0.0.0.0", () => {
             console.log(`Her API v${APP_VERSION} running on port ${PORT}`);
             console.log("Auth routes: /api/auth/signup, /login, /forgot-password, /reset-password");
+            console.log("Book routes: GET/PUT /api/books");
         });
     } catch (error) {
         console.error("Her failed to start:", error.message);

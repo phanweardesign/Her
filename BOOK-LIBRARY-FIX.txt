@@ -1,0 +1,18 @@
+HER BOOK LIBRARY FIX
+
+What changed:
+- Books now load from MongoDB for the logged-in user.
+- Existing localStorage books are automatically uploaded the first time the cloud library is empty.
+- All normal Her saves remain immediate and local, then synchronize to MongoDB.
+- If the server is temporarily unavailable, local books still load.
+
+Server update:
+1. Replace the project files with this package.
+2. In backend, run: npm install
+3. Restart: pm2 restart her-api --update-env
+4. Confirm: pm2 logs her-api --lines 50
+5. Open Her using the same URL where existing books are currently stored for the first migration.
+
+Required backend environment variables:
+- MONGO_URI
+- JWT_SECRET
