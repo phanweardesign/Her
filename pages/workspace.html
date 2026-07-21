@@ -91,17 +91,13 @@ html,body{background:var(--her-bg);color:var(--her-text)}
             <strong id="drawerBookTitle">Untitled Book</strong>
             <span id="drawerChapterTitle">Chapter 1</span>
         </div>
-        <button class="drawer-link active" onclick="closeDrawer()">📖 Writing</button>
-        <button class="drawer-link" onclick="location.href='chapters.html'">📝 Chapters</button>
+        <button class="drawer-link active" onclick="closeDrawer()">✍️ Write</button>
         <button class="drawer-link" onclick="location.href='books.html'">📚 Books</button>
         <button class="drawer-link" onclick="location.href='characters.html'">👥 Characters</button>
-        <button class="drawer-link" onclick="location.href='world.html'">🌍 World Bible</button>
-        <button class="drawer-link" onclick="location.href='dashboard.html'">🏠 Dashboard</button>
-        <button class="drawer-link" onclick="openLibrary('brainstorms')">💭 Brainstorming</button>
+        <button class="drawer-link" onclick="location.href='world.html'">🌍 World</button>
         <button class="drawer-link" onclick="openLibrary('ideas')">💡 Ideas</button>
-        <button class="drawer-link" onclick="openLibrary('plotPoints')">📌 Plot Points</button>
-        <button class="drawer-link" onclick="openLibrary('continuity')">🔎 Continuity</button>
-        <button class="drawer-link" onclick="openLibrary('summaries')">🧠 AI Memory</button>
+        <button class="drawer-link" onclick="openInsights()">✨ Insights</button>
+        <button class="drawer-link" onclick="location.href='settings/settings.html'">⚙️ Settings</button>
         <button class="drawer-link" onclick="openTools()">📦 Backup & Export</button>
     </aside>
 
@@ -115,8 +111,14 @@ html,body{background:var(--her-bg);color:var(--her-text)}
     </header>
 
     <div class="memory-strip" id="memoryStrip">
-        <span>AI memory ready</span>
-        <button onclick="runAI('chapter_summary')">Update summary</button>
+        <span>Observer is learning this story</span>
+        <button onclick="openInsights()">View insights</button>
+    </div>
+    <div class="knowledge-strip" id="knowledgeStrip">
+        <button onclick="location.href='characters.html'"><strong id="knownCharacters">0</strong><span>Characters</span></button>
+        <button onclick="location.href='world.html'"><strong id="knownLocations">0</strong><span>Locations</span></button>
+        <button onclick="openLibrary('ideas')"><strong id="knownIdeas">0</strong><span>Ideas</span></button>
+        <button onclick="openInsights()"><strong id="knownInsights">0</strong><span>Insights</span></button>
     </div>
 
     <main class="editor-area">
@@ -125,14 +127,10 @@ html,body{background:var(--her-bg);color:var(--her-text)}
     </main>
 
     <div class="ai-toolbar">
-        <button onclick="runAI('continue')">Continue</button>
+        <button id="collaborateButton" class="her-primary" onclick="runCollaboration()">✨ Write with Her</button>
         <button onclick="openRewriteMenu()">Rewrite</button>
-        <button onclick="runAI('grammar')">Grammar</button>
-        <button onclick="runAI('brainstorm')">Brainstorm</button>
-        <button onclick="runAI('section_starter')">Flow Starter</button>
-        <button onclick="runAI('continuity_check')">Continuity</button>
-        <button onclick="openLibrary('plotPoints')">Plot Points</button>
-        <button onclick="scanStoryCharacters()">Scan Characters</button>
+        <button onclick="openAITools()">AI Tools</button>
+        <button onclick="openInsights()">Insights</button>
     </div>
 
     <footer class="workspace-footer">
@@ -190,6 +188,21 @@ html,body{background:var(--her-bg);color:var(--her-text)}
     </div>
 </div>
 
+<div class="modal" id="aiToolsModal">
+    <div class="modal-card">
+        <h3>AI Editing Tools</h3>
+        <div class="tool-grid">
+            <button onclick="closeAITools();runAI('grammar')">Grammar</button>
+            <button onclick="closeAITools();runAI('brainstorm')">Brainstorm</button>
+            <button onclick="closeAITools();runAI('section_starter')">Flow Starter</button>
+            <button onclick="closeAITools();runAI('continuity_check')">Continuity</button>
+            <button onclick="closeAITools();runAI('chapter_summary')">Summarize</button>
+            <button onclick="closeAITools();scanStoryCharacters()">Scan Characters</button>
+        </div>
+        <button class="secondary" onclick="closeAITools()">Close</button>
+    </div>
+</div>
+
 <div class="modal" id="toolsModal">
     <div class="modal-card">
         <h3>Backup & Export</h3>
@@ -208,6 +221,13 @@ html,body{background:var(--her-bg);color:var(--her-text)}
 <script src="../js/modules/characters/characters.js"></script>
 <script src="../js/modules/ai/ai.js"></script>
 <script src="../js/modules/ai/storyIntelligence.js"></script>
+<script src="../js/modules/brains/core.js"></script>
+<script src="../js/modules/brains/knowledge.js"></script>
+<script src="../js/modules/brains/analyst.js"></script>
+<script src="../js/modules/brains/world.js"></script>
+<script src="../js/modules/brains/character.js"></script>
+<script src="../js/modules/brains/coauthor.js"></script>
+<script src="../js/modules/brains/observer.js"></script>
 <script>
 
 function openDashboard() {
@@ -332,9 +352,102 @@ function saveNow() {
 
 function scheduleSave() {
     $("saveStatus").textContent = "Saving...";
+    if (window.HerObserver) HerObserver.schedule({ book: currentBook, chapter: currentChapter, manuscript: editor.value });
     clearTimeout(saveTimer);
     saveTimer = setTimeout(saveNow, 450);
 }
+
+function runObserverNow() {
+    if (!window.HerObserver) return;
+    const state = HerObserver.observe({ book: currentBook, chapter: currentChapter, manuscript: editor.value });
+    $("memoryStrip").firstElementChild.textContent = `Observer active · ${state.characters.length} characters · ${state.world.locations.length} locations`;
+}
+
+async function runCollaboration() {
+    if (!window.HerObserver || !window.HerAI) return errorResult(new Error("Her's collaboration engine is unavailable."));
+    const button = $("collaborateButton");
+    const original = button.textContent;
+    button.disabled = true;
+    button.textContent = "Her is thinking...";
+    $("memoryStrip").firstElementChild.textContent = "Observer is coordinating the five brains...";
+    try {
+        saveNow();
+        const { result } = await HerObserver.collaborate({ book: currentBook, chapter: currentChapter, manuscript: editor.value });
+        showCollaborationResult(result);
+        $("memoryStrip").firstElementChild.textContent = "Her's continuation is ready for review";
+    } catch (error) {
+        errorResult(error);
+        $("memoryStrip").firstElementChild.textContent = "AI collaboration failed — your writing is still saved";
+    } finally {
+        button.disabled = false;
+        button.textContent = original;
+    }
+}
+
+function showCollaborationResult(result) {
+    const continuation = String(result?.continuation || "").trim();
+    if (!continuation) return errorResult(new Error("Her returned an empty continuation."));
+    $("resultTitle").textContent = "Her's Continuation";
+    $("resultStatus").textContent = result.observerDecision || "Five-brain collaboration complete";
+    $("resultBody").innerHTML = `
+        <div class="result-text" id="collaborationText"></div>
+        ${(result.analystNotes || []).length ? `<div class="ai-analysis"><strong>Analyst</strong><ul>${result.analystNotes.map(note => `<li>${String(note).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c]))}</li>`).join("")}</ul></div>` : ""}
+    `;
+    $("collaborationText").textContent = continuation;
+    $("resultFooter").innerHTML = `
+        <button class="primary-button" onclick="acceptCollaboration()">Accept</button>
+        <button onclick="rewriteCollaboration()">Rewrite</button>
+        <button onclick="undoLastAIContinuation()">Undo Rewrite</button>
+        <button onclick="closePanels()">Delete</button>
+    `;
+    window.currentCollaboration = result;
+    openPanel($("resultPanel"));
+}
+
+function acceptCollaboration() {
+    const text = String(window.currentCollaboration?.continuation || "").trim();
+    if (!text) return;
+    const separator = editor.value && !editor.value.endsWith("\n") ? "\n\n" : "";
+    const before = editor.value;
+    currentChapter.rewriteHistory = currentChapter.rewriteHistory || [];
+    currentChapter.rewriteHistory.push({ type: "ai-continuation", before, createdAt: new Date().toISOString() });
+    editor.value = before + separator + text;
+    editor.selectionStart = editor.selectionEnd = editor.value.length;
+    scheduleSave();
+    closePanels();
+}
+
+async function rewriteCollaboration() {
+    closePanels();
+    await runCollaboration();
+}
+
+function persistObserverKnowledge(state) {
+    if (!state || !CURRENT_BOOK_ID || !CURRENT_CHAPTER_ID) return;
+    HerBooks.update(CURRENT_BOOK_ID, {
+        characters: state.characters || [],
+        locations: state.world?.locations || [],
+        organizations: state.world?.organizations || [],
+        artifacts: state.world?.artifacts || [],
+        timeline: state.timeline || []
+    });
+    const saved = HerChapters.update(CURRENT_BOOK_ID, CURRENT_CHAPTER_ID, {
+        ideas: state.ideas || [],
+        characters: (state.characters || []).filter(c => (c.appearances || []).includes(CURRENT_CHAPTER_ID)).map(c => c.id),
+        locations: (state.world?.locations || []).filter(x => (x.linkedChapters || []).includes(CURRENT_CHAPTER_ID)).map(x => x.id),
+        continuityIssues: state.insights || []
+    });
+    if (saved) currentChapter = normalizeChapter(saved);
+    currentBook = HerBooks.getAll().find(item => item.id === CURRENT_BOOK_ID) || currentBook;
+}
+
+HerBrainCore?.HerBrainBus?.on("observer:updated", state => {
+    updateKnowledgeStrip(state);
+    if (!state) return;
+    persistObserverKnowledge(state);
+    const total = (state.characters?.length || 0) + (state.world?.locations?.length || 0) + (state.world?.organizations?.length || 0);
+    $("memoryStrip").firstElementChild.textContent = `Observer updated · ${state.characters.length} characters · ${state.world.locations.length} locations · ${total} discoveries`;
+});
 
 function initialize() {
     editor.value = currentChapter.content || currentChapter.manuscript || "";
@@ -349,6 +462,7 @@ function initialize() {
 
     updateStats();
     updateCounts();
+    if (window.HerObserver) HerObserver.observe({ book: currentBook, chapter: currentChapter, manuscript: editor.value });
 
     try {
         const session = JSON.parse(localStorage.getItem(SESSION_KEY) || "null");
@@ -816,6 +930,48 @@ async function scanStoryCharacters(){const manuscript=editor.value.trim();if(!ma
 function renderCharacterSuggestions(){if(!detectedCharacterSuggestions.length){$("resultTitle").textContent="New Characters";$("resultStatus").textContent="No new named characters found";$("resultBody").innerHTML='<div class="empty">Her did not find any new named characters missing from this book.</div>';$("resultFooter").innerHTML='<button onclick="closePanels()">Done</button>';return;} $("resultTitle").textContent="New Characters";$("resultStatus").textContent=`${detectedCharacterSuggestions.length} suggestion${detectedCharacterSuggestions.length===1?'':'s'}`;$("resultBody").innerHTML='<div class="card-list">'+detectedCharacterSuggestions.map((s,i)=>`<article class="story-scan-card"><h3>${esc(s.name)}</h3><div class="story-scan-meta">${esc(s.role||'Supporting Character')}${s.age?' • Age '+esc(s.age):''}${s.occupation?' • '+esc(s.occupation):''}</div>${s.relationships.length?`<p>${esc(s.relationships.join(' • '))}</p>`:''}${s.evidence?`<p class="story-scan-evidence">${esc(s.evidence)}</p>`:''}<div class="small-actions"><button onclick="acceptDetectedCharacter(${i})">Add Draft Profile</button><button class="secondary" onclick="ignoreDetectedCharacter(${i})">Ignore</button></div></article>`).join('')+'</div>';$("resultFooter").innerHTML='<button onclick="acceptAllDetectedCharacters()">Accept All</button><button class="secondary" onclick="closePanels()">Review Later</button>';}
 function acceptDetectedCharacter(i){const s=detectedCharacterSuggestions[i];if(!s)return;HerStoryIntelligence.acceptCharacter(CURRENT_BOOK_ID,CURRENT_CHAPTER_ID,s);detectedCharacterSuggestions.splice(i,1);renderCharacterSuggestions()} function ignoreDetectedCharacter(i){detectedCharacterSuggestions.splice(i,1);renderCharacterSuggestions()} function acceptAllDetectedCharacters(){detectedCharacterSuggestions.forEach(s=>HerStoryIntelligence.acceptCharacter(CURRENT_BOOK_ID,CURRENT_CHAPTER_ID,s));detectedCharacterSuggestions=[];renderCharacterSuggestions()}
 
+
+function openAITools() { $("aiToolsModal").classList.add("open"); }
+function closeAITools() { $("aiToolsModal").classList.remove("open"); }
+
+function openInsights() {
+    closeDrawer();
+    reloadCurrentData();
+    const observer = window.HerObserver?.getState ? HerObserver.getState(CURRENT_BOOK_ID) : null;
+    const insights = observer?.insights || currentChapter.continuityIssues || [];
+    const activeIdeas = (currentChapter.ideas || []).filter(x => !x.status || !["completed","discarded"].includes(String(x.status).toLowerCase()));
+    $("resultTitle").textContent = "Story Insights";
+    $("resultStatus").textContent = `${insights.length} observation${insights.length === 1 ? "" : "s"} · ${activeIdeas.length} active idea${activeIdeas.length === 1 ? "" : "s"}`;
+    $("resultBody").innerHTML = `
+        <section class="insight-section"><h3>Observer</h3>${insights.length ? insights.map(item => `<article class="insight-card"><strong>${esc(item.type || item.severity || "Story observation")}</strong><p>${esc(item.text || item.message || item)}</p></article>`).join("") : '<div class="empty">Her has not found any concerns yet.</div>'}</section>
+        <section class="insight-section"><h3>Active Story Threads</h3>${activeIdeas.length ? activeIdeas.slice(-8).reverse().map(item => `<article class="insight-card"><strong>${esc(item.status || "Active")}</strong><p>${esc(item.text)}</p></article>`).join("") : '<div class="empty">No active story threads yet.</div>'}</section>`;
+    $("resultFooter").innerHTML = `<button onclick="runAI('continuity_check')">Run deeper analysis</button><button class="secondary" onclick="closePanels()">Done</button>`;
+    openPanel($("resultPanel"));
+}
+
+function undoLastAIContinuation() {
+    const history = currentChapter.rewriteHistory || [];
+    const entry = [...history].reverse().find(x => x.type === "ai-continuation" && typeof x.before === "string");
+    if (!entry) return alert("There is no accepted AI continuation to undo yet.");
+    editor.value = entry.before;
+    const index = history.lastIndexOf(entry);
+    if (index >= 0) history.splice(index, 1);
+    saveNow();
+    closePanels();
+}
+
+function updateKnowledgeStrip(state) {
+    const data = state || (window.HerObserver?.getState ? HerObserver.getState(CURRENT_BOOK_ID) : null) || {};
+    const chars = data.characters || currentBook.characters || [];
+    const locations = data.world?.locations || currentBook.locations || [];
+    const ideas = data.ideas || currentChapter.ideas || [];
+    const insights = data.insights || currentChapter.continuityIssues || [];
+    if ($("knownCharacters")) $("knownCharacters").textContent = chars.length;
+    if ($("knownLocations")) $("knownLocations").textContent = locations.length;
+    if ($("knownIdeas")) $("knownIdeas").textContent = ideas.length;
+    if ($("knownInsights")) $("knownInsights").textContent = insights.length;
+}
+
 function openTools() { closeDrawer(); $("toolsModal").classList.add("open"); }
 function closeTools() { $("toolsModal").classList.remove("open"); }
 
@@ -861,6 +1017,7 @@ editor.addEventListener("input", () => {
 });
 window.addEventListener("beforeunload", saveNow);
 initialize();
+setTimeout(() => { runObserverNow(); updateKnowledgeStrip(); }, 100);
 </script>
 </body>
 </html>

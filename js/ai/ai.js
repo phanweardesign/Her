@@ -13,5 +13,6 @@ const HerAI = {
     continue(text, context = {}) { return this.continueWriting(text, context); },
     rewrite(text, context = {}, style = "standard") { return this.ask("rewrite", text, context, { style }); },
     grammar(text, context = {}) { return this.ask("grammar", text, context); },
-    brainstorm(text, context = {}) { return this.ask("brainstorm", text, context); }
+    brainstorm(text, context = {}) { return this.ask("brainstorm", text, context); },
+    collaborate(text, context = {}) { return this.ask("collaborate", text, context); }
 };

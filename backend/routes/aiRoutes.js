@@ -19,7 +19,26 @@ Return valid JSON only in this shape:
 Return {"issues":[]} when no issue is found.`,
     chapter_summary: `Create a compact memory summary for this chapter. Include: major events, character actions and decisions, new facts, locations, objects, promises, mysteries, relationship changes, timeline facts, and unresolved questions. Return plain text.`,
     book_summary: `Create or update a compact whole-book memory summary using all supplied chapter summaries, plot points, characters, locations and timeline. Preserve confirmed facts and unresolved threads. Return plain text.`,
-    story_intelligence_characters: `Analyze the chapter for NEW named fictional people only. Compare against existingCharacters in STORY MEMORY. Extract only facts directly supported by the chapter and never invent details. Return valid JSON only: {"characters":[{"name":"string","role":"string","age":"string","occupation":"string","relationships":["string"],"firstAppearance":"string","confidence":0.0,"evidence":"short explanation"}]}. Return {"characters":[]} if none.`
+    story_intelligence_characters: `Analyze the chapter for NEW named fictional people only. Compare against existingCharacters in STORY MEMORY. Extract only facts directly supported by the chapter and never invent details. Return valid JSON only: {"characters":[{"name":"string","role":"string","age":"string","occupation":"string","relationships":["string"],"firstAppearance":"string","confidence":0.0,"evidence":"short explanation"}]}. Return {"characters":[]} if none.`,
+    collaborate: `Act as the Observer coordinating four specialist brains.
+
+CO-AUTHOR BRAIN: Continue the story in the author's established voice, POV, tense, rhythm and pacing.
+CHARACTER BRAIN: Control only AI-managed characters. Keep their dialogue, emotions, goals and behavior consistent.
+WORLD BRAIN: Make the environment react naturally and preserve established locations, timeline and world rules.
+ANALYST BRAIN: Check continuity, pacing, grammar, character consistency and reader experience before approving the continuation.
+
+CRITICAL AUTHOR-CONTROL RULE:
+Never write dialogue, thoughts, emotions, physical actions, decisions or reactions for any character listed in authorControlledCharacters. The continuation may describe the setting and AI-managed characters around them, but must stop before forcing the author-controlled character to act.
+
+Return valid JSON only in this exact shape:
+{
+  "continuation":"story prose only",
+  "observerDecision":"one short sentence explaining the chosen direction",
+  "analystNotes":["short note"],
+  "usedCharacters":["name"],
+  "worldUpdates":["short fact"],
+  "suggestedIdeas":["optional future possibility"]
+}`
 };
 
 function rewriteInstruction(style) {
@@ -72,9 +91,10 @@ ${prompt}`
             ],
             temperature:
                 action === "grammar" || action === "continuity_check" || action === "story_intelligence_characters" ? 0.15 :
+                action === "collaborate" ? 0.65 :
                 action === "chapter_summary" || action === "book_summary" ? 0.35 :
                 action === "section_starter" ? 0.65 : 0.8,
-            response_format: ["continuity_check", "story_intelligence_characters"].includes(action)
+            response_format: ["continuity_check", "story_intelligence_characters", "collaborate"].includes(action)
                 ? { type: "json_object" }
                 : undefined
         });
