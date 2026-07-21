@@ -1,10 +1,12 @@
 /* ==========================================
    HER STORAGE
-   Compatible with old and current Her saves.
+   Backward-compatible and protected against
+   accidental book-library loss.
 ========================================== */
 
 const HER_STORAGE_KEYS = {
     BOOKS: "her_books",
+    BOOKS_BACKUP: "her_books_backup",
     CURRENT_BOOK_ID: "her_current_book_id",
     CURRENT_CHAPTER_ID: "her_current_chapter_id",
     CURRENT_CHARACTER_ID: "her_current_character_id",
@@ -21,42 +23,30 @@ function save(key, value) {
     localStorage.setItem(key, JSON.stringify(value));
 }
 
-/*
-    Reads normal JSON and older double-encoded JSON.
-    Example:
-    normal:        [{"title":"Book"}]
-    double-coded:  "[{\"title\":\"Book\"}]"
-*/
-function load(key, defaultValue = null) {
-    const raw = localStorage.getItem(key);
-
-    if (raw === null) {
-        return defaultValue;
+function parseStoredValue(raw, fallback = null) {
+    if (raw === null || raw === undefined || raw === "") {
+        return fallback;
     }
 
     try {
         let value = JSON.parse(raw);
 
-        /*
-            Some older Her versions saved an already-stringified value.
-            Unwrap it once more when it still contains JSON text.
-        */
-        if (typeof value === "string") {
+        // Recover values that were JSON-stringified more than once.
+        for (let attempt = 0; attempt < 2 && typeof value === "string"; attempt += 1) {
             const trimmed = value.trim();
-
-            if (
-                trimmed.startsWith("[") ||
-                trimmed.startsWith("{")
-            ) {
-                value = JSON.parse(trimmed);
-            }
+            if (!trimmed.startsWith("[") && !trimmed.startsWith("{")) break;
+            value = JSON.parse(trimmed);
         }
 
         return value;
     } catch (error) {
-        console.error(`Error loading "${key}" from storage.`, error);
-        return defaultValue;
+        console.error("Her could not parse stored data.", error);
+        return fallback;
     }
+}
+
+function load(key, defaultValue = null) {
+    return parseStoredValue(localStorage.getItem(key), defaultValue);
 }
 
 function remove(key) {
@@ -69,239 +59,233 @@ function clearStorage() {
 
 /* BOOKS */
 
-function normalizeBooks(value) {
+function looksLikeBook(item) {
+    return Boolean(
+        item &&
+        typeof item === "object" &&
+        !Array.isArray(item) &&
+        (
+            "title" in item ||
+            "chapters" in item ||
+            "genre" in item ||
+            "description" in item
+        )
+    );
+}
+
+function extractBooks(value, depth = 0) {
+    if (depth > 4 || value === null || value === undefined) return [];
+
     if (Array.isArray(value)) {
-        return value;
+        return value.filter(looksLikeBook);
     }
 
-    /*
-        Recover an object-shaped collection if an older version saved books
-        by their IDs instead of as an array.
-    */
-    if (value && typeof value === "object") {
-        if (Array.isArray(value.books)) {
-            return value.books;
-        }
+    if (typeof value === "string") {
+        return extractBooks(parseStoredValue(value, null), depth + 1);
+    }
 
-        return Object.values(value).filter(
-            item => item && typeof item === "object" && item.id
-        );
+    if (typeof value !== "object") return [];
+
+    const knownContainers = [
+        value.books,
+        value.library,
+        value.data?.books,
+        value.state?.books,
+        value.payload?.books
+    ];
+
+    for (const candidate of knownContainers) {
+        const books = extractBooks(candidate, depth + 1);
+        if (books.length) return books;
+    }
+
+    const objectValues = Object.values(value);
+    if (objectValues.length && objectValues.every(looksLikeBook)) {
+        return objectValues;
     }
 
     return [];
 }
 
+function normalizeChapter(chapter, index) {
+    const source = chapter && typeof chapter === "object" ? chapter : {};
+
+    return {
+        ...source,
+        id: String(source.id || createId()),
+        title: String(source.title || `Chapter ${index + 1}`),
+        content: String(source.content || ""),
+        status: source.status || "Draft",
+        characters: Array.isArray(source.characters) ? source.characters : [],
+        locations: Array.isArray(source.locations) ? source.locations : []
+    };
+}
+
+function normalizeBook(book, index) {
+    const source = book && typeof book === "object" ? book : {};
+    const chapters = Array.isArray(source.chapters)
+        ? source.chapters.map(normalizeChapter)
+        : [];
+
+    return {
+        ...source,
+        id: String(source.id || createId()),
+        title: String(source.title || source.name || `Untitled Book ${index + 1}`),
+        genre: String(source.genre || ""),
+        description: String(source.description || ""),
+        chapters,
+        characters: Array.isArray(source.characters) ? source.characters : [],
+        locations: Array.isArray(source.locations) ? source.locations : [],
+        organizations: Array.isArray(source.organizations) ? source.organizations : [],
+        artifacts: Array.isArray(source.artifacts) ? source.artifacts : [],
+        magic: Array.isArray(source.magic) ? source.magic : [],
+        history: Array.isArray(source.history) ? source.history : [],
+        notes: Array.isArray(source.notes) ? source.notes : []
+    };
+}
+
+function readBooksFromKey(key) {
+    return extractBooks(load(key, null)).map(normalizeBook);
+}
+
 function getBooks() {
-    const books = normalizeBooks(
-        load(HER_STORAGE_KEYS.BOOKS, [])
-    );
+    let books = readBooksFromKey(HER_STORAGE_KEYS.BOOKS);
 
-    /*
-        Rewrite recovered legacy data into the current array format.
-        This does not delete or alter the individual books.
-    */
-    const raw = localStorage.getItem(HER_STORAGE_KEYS.BOOKS);
+    // Restore the protected backup if the main key is missing or damaged.
+    if (!books.length) {
+        books = readBooksFromKey(HER_STORAGE_KEYS.BOOKS_BACKUP);
+    }
 
-    if (books.length && raw) {
-        try {
-            const firstParse = JSON.parse(raw);
+    // Recover libraries written by older experimental builds.
+    if (!books.length) {
+        const legacyKeys = ["herBooks", "books", "savedBooks", "her_library"];
+        for (const key of legacyKeys) {
+            books = readBooksFromKey(key);
+            if (books.length) break;
+        }
+    }
 
-            if (
-                !Array.isArray(firstParse) ||
-                typeof firstParse === "string"
-            ) {
-                saveBooks(books);
-            }
-        } catch {
-            /* Leave the original value untouched if it cannot be verified. */
+    // Migrate recovered data into the current key without deleting the source.
+    if (books.length) {
+        const primary = readBooksFromKey(HER_STORAGE_KEYS.BOOKS);
+        if (!primary.length) {
+            localStorage.setItem(HER_STORAGE_KEYS.BOOKS, JSON.stringify(books));
         }
     }
 
     return books;
 }
 
-function saveBooks(books) {
-    save(
-        HER_STORAGE_KEYS.BOOKS,
-        Array.isArray(books) ? books : []
-    );
+function saveBooks(books, options = {}) {
+    if (!Array.isArray(books)) {
+        console.error("Her refused to save an invalid book collection.", books);
+        return false;
+    }
+
+    const normalized = books.filter(looksLikeBook).map(normalizeBook);
+    const current = readBooksFromKey(HER_STORAGE_KEYS.BOOKS);
+
+    // Never let an accidental empty save erase a populated library.
+    if (
+        normalized.length === 0 &&
+        current.length > 0 &&
+        options.allowEmpty !== true
+    ) {
+        console.error("Her blocked an unexpected empty save that would erase existing books.");
+        return false;
+    }
+
+    if (current.length > 0) {
+        localStorage.setItem(
+            HER_STORAGE_KEYS.BOOKS_BACKUP,
+            JSON.stringify(current)
+        );
+    }
+
+    localStorage.setItem(HER_STORAGE_KEYS.BOOKS, JSON.stringify(normalized));
+    return true;
 }
 
-/* CURRENT BOOK — ID based */
-
 function setCurrentBookId(bookId) {
-    localStorage.setItem(
-        HER_STORAGE_KEYS.CURRENT_BOOK_ID,
-        String(bookId || "")
-    );
+    localStorage.setItem(HER_STORAGE_KEYS.CURRENT_BOOK_ID, String(bookId || ""));
 }
 
 function getCurrentBookId() {
-    return localStorage.getItem(
-        HER_STORAGE_KEYS.CURRENT_BOOK_ID
-    );
+    return localStorage.getItem(HER_STORAGE_KEYS.CURRENT_BOOK_ID);
 }
 
 function getCurrentBook() {
-    const currentId = getCurrentBookId();
-
-    return getBooks().find(
-        book => book.id === currentId
-    ) || null;
+    const currentId = String(getCurrentBookId() || "");
+    return getBooks().find(book => String(book.id) === currentId) || null;
 }
-
-/* Legacy index helpers */
 
 function setCurrentBookIndex(index) {
     save(HER_STORAGE_KEYS.CURRENT_BOOK_INDEX, index);
-
     const book = getBooks()[index];
-
-    if (book) {
-        setCurrentBookId(book.id);
-    }
+    if (book) setCurrentBookId(book.id);
 }
 
 function getCurrentBookIndex() {
     const books = getBooks();
-    const currentId = getCurrentBookId();
+    const currentId = String(getCurrentBookId() || "");
 
     if (currentId) {
-        const index = books.findIndex(
-            book => book.id === currentId
-        );
-
-        if (index >= 0) {
-            return index;
-        }
+        const index = books.findIndex(book => String(book.id) === currentId);
+        if (index >= 0) return index;
     }
 
-    return load(
-        HER_STORAGE_KEYS.CURRENT_BOOK_INDEX,
-        null
-    );
+    return load(HER_STORAGE_KEYS.CURRENT_BOOK_INDEX, null);
 }
 
 function updateCurrentBook(updatedBook) {
-    if (!updatedBook?.id) {
-        return false;
-    }
+    if (!updatedBook?.id) return false;
 
     const books = getBooks();
-    const index = books.findIndex(
-        book => book.id === updatedBook.id
-    );
+    const index = books.findIndex(book => String(book.id) === String(updatedBook.id));
+    if (index < 0) return false;
 
-    if (index < 0) {
-        return false;
-    }
-
-    books[index] = updatedBook;
-    saveBooks(books);
-
-    return true;
+    books[index] = normalizeBook(updatedBook, index);
+    return saveBooks(books);
 }
 
-/* CURRENT CHAPTER — ID based */
-
 function setCurrentChapterId(chapterId) {
-    localStorage.setItem(
-        HER_STORAGE_KEYS.CURRENT_CHAPTER_ID,
-        String(chapterId || "")
-    );
+    localStorage.setItem(HER_STORAGE_KEYS.CURRENT_CHAPTER_ID, String(chapterId || ""));
 }
 
 function getCurrentChapterId() {
-    return localStorage.getItem(
-        HER_STORAGE_KEYS.CURRENT_CHAPTER_ID
-    );
+    return localStorage.getItem(HER_STORAGE_KEYS.CURRENT_CHAPTER_ID);
 }
-
-/* Legacy chapter index helpers */
 
 function setCurrentChapterIndex(index) {
     save(HER_STORAGE_KEYS.CURRENT_CHAPTER_INDEX, index);
-
     const book = getCurrentBook();
     const chapter = book?.chapters?.[index];
-
-    if (chapter) {
-        setCurrentChapterId(chapter.id);
-    }
+    if (chapter) setCurrentChapterId(chapter.id);
 }
 
 function getCurrentChapterIndex() {
     const book = getCurrentBook();
-    const currentId = getCurrentChapterId();
+    const currentId = String(getCurrentChapterId() || "");
 
     if (book && currentId) {
         const index = (book.chapters || []).findIndex(
-            chapter => chapter.id === currentId
+            chapter => String(chapter.id) === currentId
         );
-
-        if (index >= 0) {
-            return index;
-        }
+        if (index >= 0) return index;
     }
 
-    return load(
-        HER_STORAGE_KEYS.CURRENT_CHAPTER_INDEX,
-        0
-    );
+    return load(HER_STORAGE_KEYS.CURRENT_CHAPTER_INDEX, 0);
 }
 
-/* USER */
-
-function getUser() {
-    return load(HER_STORAGE_KEYS.USER, null);
-}
-
-function saveUser(user) {
-    save(HER_STORAGE_KEYS.USER, user);
-}
-
-/* SETTINGS */
-
-function getSettings() {
-    return load(HER_STORAGE_KEYS.SETTINGS, {});
-}
-
-function saveSettings(settings) {
-    save(HER_STORAGE_KEYS.SETTINGS, settings);
-}
-
-/* NOTES */
-
-function getNotes() {
-    return load(HER_STORAGE_KEYS.NOTES, []);
-}
-
-function saveNotes(notes) {
-    save(HER_STORAGE_KEYS.NOTES, notes);
-}
-
-/* THEME */
-
-function getTheme() {
-    return load(HER_STORAGE_KEYS.THEME, "dark");
-}
-
-function saveTheme(theme) {
-    save(HER_STORAGE_KEYS.THEME, theme);
-}
-
-/* STORY INTELLIGENCE */
-
-function getStorySuggestions() {
-    return load(
-        HER_STORAGE_KEYS.STORY_SUGGESTIONS,
-        []
-    );
-}
-
+function getUser() { return load(HER_STORAGE_KEYS.USER, null); }
+function saveUser(user) { save(HER_STORAGE_KEYS.USER, user); }
+function getSettings() { return load(HER_STORAGE_KEYS.SETTINGS, {}); }
+function saveSettings(settings) { save(HER_STORAGE_KEYS.SETTINGS, settings); }
+function getNotes() { return load(HER_STORAGE_KEYS.NOTES, []); }
+function saveNotes(notes) { save(HER_STORAGE_KEYS.NOTES, notes); }
+function getTheme() { return load(HER_STORAGE_KEYS.THEME, "dark"); }
+function saveTheme(theme) { save(HER_STORAGE_KEYS.THEME, theme); }
+function getStorySuggestions() { return load(HER_STORAGE_KEYS.STORY_SUGGESTIONS, []); }
 function saveStorySuggestions(suggestions) {
-    save(
-        HER_STORAGE_KEYS.STORY_SUGGESTIONS,
-        Array.isArray(suggestions) ? suggestions : []
-    );
+    save(HER_STORAGE_KEYS.STORY_SUGGESTIONS, Array.isArray(suggestions) ? suggestions : []);
 }
